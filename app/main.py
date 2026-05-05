@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core import kis_auth as ka
+from tasks.auth_scheduler import auth_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("!!!fast api server start!!!")
-    ka.auth()
+    auth_scheduler.start()
     yield
     print("!!!fast api server end!!!")
 
