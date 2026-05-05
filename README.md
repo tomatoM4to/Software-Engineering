@@ -1,3 +1,9 @@
+# Command
+인증 스케줄러 비활성화 시키고 개발모드 실행하는 커멘드
+```bash
+./server.sh dev
+```
+
 # 다중 AI 에이전트 기반 장/단기 스윙 퀀트 트레이딩 시스템
 
 ## 1. Vision statement
