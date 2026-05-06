@@ -1,13 +1,14 @@
-import os
 import logging
+import os
 from contextlib import asynccontextmanager
 
+from core.logging import setup_logging
 from fastapi import FastAPI
 from tasks.auth_scheduler import auth_scheduler
-from core.logging import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
