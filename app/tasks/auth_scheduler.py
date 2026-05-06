@@ -1,7 +1,10 @@
 import asyncio
+import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from core.kis_auth import auth
+
+logger = logging.getLogger(__name__)
 
 
 class AuthScheduler:
@@ -33,7 +36,7 @@ class AuthScheduler:
         # 서버 부팅 직후 인증 상태를 보장하기 위해 즉시 1회 수행
         self._bg_task = asyncio.create_task(self.refresh_auth_job())
         self._is_running = True
-        print("Auth scheduler started")
+        logger.info("Auth scheduler started")
 
     def stop(self) -> None:
         """스케줄러와 백그라운드 인증 태스크를 종료한다."""
@@ -44,17 +47,17 @@ class AuthScheduler:
             self._bg_task.cancel()
         self.scheduler.shutdown(wait=False)
         self._is_running = False
-        print("Auth scheduler stopped")
+        logger.info("Auth scheduler stopped")
 
     async def refresh_auth_job(self) -> None:
         """실제 인증 작업을 수행하는 스케줄러 Job."""
         try:
             await asyncio.to_thread(auth)
-            print("Background auth refresh completed")
+            logger.info("Background auth refresh completed")
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            print("Background auth refresh failed: %s", e)
+            logger.error("Background auth refresh failed: %s", e)
 
 
 auth_scheduler = AuthScheduler()

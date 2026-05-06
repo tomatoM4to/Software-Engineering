@@ -1,22 +1,24 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from tasks.auth_scheduler import auth_scheduler
+from core.logging import setup_logging
 
+setup_logging()
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("!!!fast api server start!!!")
     disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
 
     if disable_scheduler:
-        print("스케줄러 비활성화")
+        logger.info("auth 비활성화")
     else:
         auth_scheduler.start()
 
     yield
-    print("!!!fast api server end!!!")
 
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)
