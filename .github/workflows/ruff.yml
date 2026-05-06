@@ -1,0 +1,25 @@
+name: Ruff Linter
+
+# main 브랜치로 향하는 PR이 생성되거나 업데이트될 때 트리거
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ruff-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Ruff Linter
+        uses: astral-sh/ruff-action@v3
+        with:
+          # --output-format=github 옵션을 주면 에러가 PR 코드 리뷰 라인에 직접 표시
+          args: "check --output-format=github ."
+
+      - name: Ruff Formatter
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check ."
