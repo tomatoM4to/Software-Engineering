@@ -4,6 +4,16 @@
 ./server.sh dev
 ```
 
+ruff 린터 커멘드, 커밋전 실행 권장
+```bash
+ruff check . --fix
+ruff format .
+```
+
+***
+***
+***
+
 # 다중 AI 에이전트 기반 장/단기 스윙 퀀트 트레이딩 시스템
 
 ## 1. Vision statement
