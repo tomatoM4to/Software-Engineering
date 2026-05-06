@@ -5,14 +5,17 @@ from pydantic import BaseModel
 
 ProductCode = Literal["01", "03", "08", "22", "29"]
 
+
 class RunMode(StrEnum):
     """실행모드, 실전투자(PROD)과 모의투자(PAPER) 구분용 Enum"""
+
     PROD = "prod"
     PAPER = "vps"
 
 
 class KisEnvironment(BaseModel):
     """RunMode과 ProductCode에 따라 필요한 인증 정보와 URL을 담는 환경 객체"""
+
     my_app: str
     my_sec: str
     my_acct: str
@@ -22,13 +25,17 @@ class KisEnvironment(BaseModel):
     my_url: str
     my_url_ws: str
 
+
 class KisTokenResponse(BaseModel):
     """토큰 발급 API 응답 모델"""
+
     access_token: str
     access_token_token_expired: str
 
+
 class KisConfig(BaseModel):
     """kis_devlp.yaml 파일의 내용을 담는 시스템 설정값"""
+
     my_app: str
     my_sec: str
     paper_app: str | None = None
@@ -79,7 +86,9 @@ class KisConfig(BaseModel):
                 "03": self.my_paper_future,
             }
         my_acct = account_by_product.get(product)
-        return self._require(f"account for mode={mode.value}, product={product}", my_acct)
+        return self._require(
+            f"account for mode={mode.value}, product={product}", my_acct
+        )
 
     def api_url(self, mode: RunMode) -> str:
         return self._require(mode.value, getattr(self, mode.value, None))
@@ -87,7 +96,9 @@ class KisConfig(BaseModel):
     def ws_url(self, mode: RunMode) -> str:
         return (self.ops if mode == RunMode.PROD else self.vops) or ""
 
-    def to_environment(self, mode: RunMode, product: ProductCode, token_key: str) -> KisEnvironment:
+    def to_environment(
+        self, mode: RunMode, product: ProductCode, token_key: str
+    ) -> KisEnvironment:
         my_app, my_sec = self.app_credentials(mode)
         return KisEnvironment(
             my_app=my_app,

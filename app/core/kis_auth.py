@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # config_root = ~/Software-Engineering
 config_root = Path(__file__).resolve().parent.parent.parent
 
+
 def _get_token_path(now: datetime | None = None) -> Path:
     """호출 시점 날짜 기준으로 Path 객체 ~/Software-Engineering/KISYYYYMMDD 반환"""
     current = now or datetime.today()
@@ -28,7 +29,7 @@ def _get_token_path(now: datetime | None = None) -> Path:
 
 
 with open(os.path.join(config_root, "kis_devlp.yaml"), encoding="utf-8") as f:
-   _kis_cfg: KisConfig = KisConfig.model_validate(yaml.safe_load(f))
+    _kis_cfg: KisConfig = KisConfig.model_validate(yaml.safe_load(f))
 
 
 """
@@ -81,9 +82,7 @@ def get_base_header():
 
 
 def auth(
-    svr: str | RunMode = RunMode.PROD,
-    product: ProductCode = _kis_cfg.my_prod,
-    url=None
+    svr: str | RunMode = RunMode.PROD, product: ProductCode = _kis_cfg.my_prod, url=None
 ):
     """
     - access_token 발급
@@ -107,7 +106,7 @@ def auth(
         p = {
             "grant_type": "client_credentials",
             "appkey": appkey,
-            "appsecret": appsecret
+            "appsecret": appsecret,
         }
         token_url = f"{_kis_cfg.api_url(mode)}/oauth2/tokenP"
         res = requests.post(
@@ -155,11 +154,14 @@ def auth(
 def get_kis_cfg() -> KisConfig:
     return _kis_cfg
 
+
 def get_kis_env() -> KisEnvironment:
     return _kis_env
 
+
 def is_paper_trading() -> bool:
     return _is_paper
+
 
 def smart_sleep() -> None:
     """0.05초(PROD) 또는 0.5초(PAPER) 대기"""

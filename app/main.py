@@ -18,10 +18,9 @@ async def lifespan(app: FastAPI):
     yield
     print("!!!fast api server end!!!")
 
-app = FastAPI(
-    title="Trading Server",
-    lifespan=lifespan
-)
+
+app = FastAPI(title="Trading Server", lifespan=lifespan)
+
 
 @app.get("/")
 def read_root():
