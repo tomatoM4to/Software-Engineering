@@ -1,10 +1,11 @@
-from enum import Enum
-from typing import Literal, Optional
+from enum import StrEnum
+from typing import Literal
+
 from pydantic import BaseModel
 
 ProductCode = Literal["01", "03", "08", "22", "29"]
 
-class RunMode(str, Enum):
+class RunMode(StrEnum):
     """실행모드, 실전투자(PROD)과 모의투자(PAPER) 구분용 Enum"""
     PROD = "prod"
     PAPER = "vps"
@@ -30,13 +31,13 @@ class KisConfig(BaseModel):
     """kis_devlp.yaml 파일의 내용을 담는 시스템 설정값"""
     my_app: str
     my_sec: str
-    paper_app: Optional[str] = None
-    paper_sec: Optional[str] = None
+    paper_app: str | None = None
+    paper_sec: str | None = None
     my_htsid: str
     my_acct_stock: str
-    my_acct_future: Optional[str] = None
-    my_paper_stock: Optional[str] = None
-    my_paper_future: Optional[str] = None
+    my_acct_future: str | None = None
+    my_paper_stock: str | None = None
+    my_paper_future: str | None = None
     my_prod: ProductCode
     prod: str
     ops: str
@@ -45,7 +46,7 @@ class KisConfig(BaseModel):
     my_token: str
     my_agent: str
 
-    def _require(self, key: str, value: Optional[str]) -> str:
+    def _require(self, key: str, value: str | None) -> str:
         if value is None or value == "":
             raise ValueError(f"kis_devlp.yaml required key is missing or empty: {key}")
         return value

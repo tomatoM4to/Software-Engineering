@@ -1,8 +1,9 @@
 import os
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from core import kis_auth as ka
+
+from fastapi import FastAPI
 from tasks.auth_scheduler import auth_scheduler
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

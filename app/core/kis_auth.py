@@ -1,17 +1,22 @@
-import os
-import yaml
-import json
 import copy
+import json
 import logging
-import requests
+import os
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import requests
+import yaml
+from schemas.core import (
+    KisConfig,
+    KisEnvironment,
+    KisTokenResponse,
+    ProductCode,
+    RunMode,
+)
 
 logger = logging.getLogger(__name__)
-
-from schemas.core import RunMode, KisEnvironment, KisTokenResponse, KisConfig, ProductCode
-
 
 # config_root = ~/Software-Engineering
 config_root = Path(__file__).resolve().parent.parent.parent
