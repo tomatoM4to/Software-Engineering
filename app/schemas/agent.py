@@ -1,10 +1,6 @@
 """
 [Issue #4] AI 에이전트 의사결정 모듈 — Pydantic 스키마
 
-실제 DB 구조 기반:
-  - stock_list: id, market, short_code, standard_code, stock_name_kr, group_code
-  - ohlcv: id, stock_id, trade_date(YYYYMMDD), open, high, low, close, volume, turnover
-
 사용 지표 (단순):
   MA5, MA20, MA60 / 거래량 비율 / 20일 고점 돌파 / 전일 대비 등락률
 """
@@ -91,8 +87,6 @@ class DailyIndicators(BaseModel):
 class MinuteIndicators(BaseModel):
     """
     분봉 기술 지표.
-    data_source='realtime'  : Issue #3 breakout.fetch_kis_ohlcv_df() 실제 호출 결과.
-    data_source='daily_proxy': KIS 미연결 시 일봉 당일 값으로 대체.
     """
 
     timeframe: str = Field(default="1m")
@@ -104,8 +98,8 @@ class MinuteIndicators(BaseModel):
     latest_price: int = Field(..., gt=0)
     latest_volume: int = Field(..., ge=0)
 
-    ma15: Optional[float] = Field(None)
-    ma30: Optional[float] = Field(None)
+    ma15: float | None = Field(None)
+    ma30: float | None = Field(None)
 
     is_minute_breakout: bool | None = Field(None)
     minute_breakout_level: float | None = Field(None)
@@ -122,7 +116,7 @@ class MinuteIndicators(BaseModel):
         return v
 
 
-# 뉴스 스키마 (Issue #5 News 미구현)
+# 뉴스 스키마 (News None)
 
 
 class AgentNewsItem(BaseModel):
