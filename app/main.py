@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 
 from core.logging import setup_logging
 from fastapi import FastAPI
-from tasks.auth_scheduler import auth_scheduler
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -13,13 +12,21 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
+    scheduler = None
 
     if disable_scheduler:
         logger.info("auth 비활성화")
     else:
-        auth_scheduler.start()
+        from tasks.auth_scheduler import AuthScheduler
+
+        scheduler = AuthScheduler()
+        scheduler.start()
 
     yield
+
+    if scheduler:
+        scheduler.stop()
+        logger.info("Auth scheduler stopped during shutdown")
 
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)

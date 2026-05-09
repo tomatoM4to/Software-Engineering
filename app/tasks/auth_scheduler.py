@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from core.kis_auth import auth
@@ -8,12 +9,25 @@ logger = logging.getLogger(__name__)
 
 
 class AuthScheduler:
-    """KIS 인증을 백그라운드에서 주기적으로 갱신하는 스케줄러."""
+    """KIS 인증을 백그라운드에서 주기적으로 갱신하는 스케줄러. Thread-safe Singleton."""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self) -> None:
+        if hasattr(self, "_initialized"):
+            return
         self.scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
         self._is_running = False
         self._bg_task: asyncio.Task[None] | None = None
+        self._initialized = True
 
     def start(self) -> None:
         """매일 밤 10시에 인증을 수행하고, 부팅 시 즉시 1회 인증을 시도한다."""
@@ -58,6 +72,3 @@ class AuthScheduler:
             raise
         except Exception as e:
             logger.error("Background auth refresh failed: %s", e)
-
-
-auth_scheduler = AuthScheduler()
