@@ -2,6 +2,8 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+from api.ranking import router as ranking_router
+from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from fastapi import FastAPI
 
@@ -11,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # KIS API 초당 제한 방어 워커 시작
+    await start_kis_worker()
+
     disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
     scheduler = None
 
@@ -30,6 +35,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)
+
+app.include_router(ranking_router, prefix="/api")
 
 
 @app.get("/")
