@@ -2,6 +2,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+from api.ranking import router as ranking_router
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from fastapi import FastAPI
@@ -32,8 +33,6 @@ async def lifespan(app: FastAPI):
         scheduler.stop()
         logger.info("Auth scheduler stopped during shutdown")
 
-
-from api.ranking import router as ranking_router
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)
 
