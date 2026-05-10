@@ -2,6 +2,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from fastapi import FastAPI
 
@@ -11,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # KIS API 초당 제한 방어 워커 시작
+    await start_kis_worker()
+
     disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
     scheduler = None
 
