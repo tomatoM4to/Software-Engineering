@@ -33,7 +33,11 @@ async def lifespan(app: FastAPI):
         logger.info("Auth scheduler stopped during shutdown")
 
 
+from api.ranking import router as ranking_router
+
 app = FastAPI(title="Trading Server", lifespan=lifespan)
+
+app.include_router(ranking_router, prefix="/api")
 
 
 @app.get("/")
