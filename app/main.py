@@ -6,6 +6,7 @@ from api.ranking import router as ranking_router
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from fastapi import FastAPI
+from routes.agent import router as agent_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Trading Server", lifespan=lifespan)
 
 app.include_router(ranking_router, prefix="/api")
+app.include_router(agent_router, prefix="/api")
 
 
 @app.get("/")
