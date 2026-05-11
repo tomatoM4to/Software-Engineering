@@ -183,11 +183,7 @@ class AgentAutoRequest(BaseModel):
     stock_name: str | None = Field(None)
     analysis_mode: str = Field(default="swing_short")
 
-    # 분봉 파라미터
-    minute_timeframe: str = Field(
-        default="1m",
-        description="분봉 단위: 1m | 3m | 5m | 15m | 30m",
-    )
+    # 분봉 파라미터 (1분봉)
     minute_limit: int = Field(
         default=60,
         ge=30,
@@ -200,13 +196,6 @@ class AgentAutoRequest(BaseModel):
     def _check_mode(cls, v: str) -> str:
         if v not in ("swing_short", "day_trade"):
             raise ValueError("analysis_mode must be swing_short or day_trade")
-        return v
-
-    @field_validator("minute_timeframe")
-    @classmethod
-    def _check_tf(cls, v: str) -> str:
-        if v not in ("1m", "3m", "5m", "15m", "30m"):
-            raise ValueError("minute_timeframe must be one of 1m, 3m, 5m, 15m, 30m")
         return v
 
 
