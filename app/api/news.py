@@ -1,8 +1,8 @@
 from typing import Literal
 
-from core.naver_news import NaverNewsError, search_news
 from fastapi import APIRouter, HTTPException, Query
 from schemas.news import NewsSearchResponse
+from services.naver_news import NaverNewsError, search_news
 
 router = APIRouter(prefix="/news", tags=["news"])
 
