@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     NAVER_CLIENT_ID: str
     NAVER_CLIENT_SECRET: str
+    ANTHROPIC_API_KEY: str
+    ENABLE_SCHEDULER: bool
 
     model_config = SettingsConfigDict(env_file=".env")
 
