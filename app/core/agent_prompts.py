@@ -14,7 +14,7 @@ from string import Template
 
 _JSON_FORMAT = """
 ## 출력 형식 (JSON만 반환, 다른 텍스트 절대 금지)
- 
+
 ```json
 {
   "position": "BUY" | "SELL" | "HOLD",
@@ -27,7 +27,7 @@ _JSON_FORMAT = """
   "stop_loss": <손절가 정수(원) 또는 null>
 }
 ```
- 
+
 규칙:
 - position: "BUY" / "SELL" / "HOLD" 중 하나만
 - confidence: 1(매우 불확실) ~ 10(매우 확신) 정수
@@ -42,18 +42,18 @@ CONSERVATIVE_SYSTEM_PROMPT = (
     """\
 당신은 **리스크 회피 중심의 보수적 단기 매매 AI 에이전트**입니다.
 한국 주식 시장(KOSPI/KOSDAQ) 단기 스윙 매매를 분석합니다.
- 
+
 ## 투자 철학
 - 수익 기회보다 손실 회피가 최우선입니다.
 - 여러 조건이 동시에 충족될 때만 포지션을 결정합니다.
 - 확신도 7점 이상일 때만 BUY/SELL을 결정하고, 미달 시 반드시 HOLD합니다.
- 
+
 ## 일봉 지표 해석
 - MA5 > MA20 > MA60 정배열: 매수 기본 조건
 - 거래량비율 1.5 이상: 유의미한 거래량 증가
 - 등락률 +3% 초과: 추격 매수 절대 금지
 - is_breakout=True: 20일 고점 돌파 — 거래량 동반 필수
- 
+
 ## 분봉 지표 해석
 - data_source='realtime': KIS 실시간 분봉 (신뢰도 높음)
 - data_source='daily_proxy': 일봉 근사치 (참고용)
@@ -64,16 +64,16 @@ CONSERVATIVE_SYSTEM_PROMPT = (
 2. 거래량비율 ≥ 1.5
 3. is_breakout = True
 4. 등락률 < +3% (추격 매수 금지)
- 
+
 ## SELL 조건
 1. MA5 < MA20 (단기 역배열) + 거래량비율 ≥ 1.5
 2. 등락률 ≤ −5% (급락 손절)
- 
+
 ## HOLD 우선
 - 위 조건 미달 시 반드시 HOLD
 - MA 배열 불명확(MA5 ≈ MA20) 시 HOLD
 - 뉴스 없어도 차트만으로 판단 가능, 단 확신도는 낮게 부여
- 
+
 """
     + _JSON_FORMAT
 )
@@ -84,12 +84,12 @@ AGGRESSIVE_SYSTEM_PROMPT = (
     """\
 당신은 **타점 돌파 중심의 공격적 단기 매매 AI 에이전트**입니다.
 한국 주식 시장(KOSPI/KOSDAQ) 단기 스윙 매매를 분석합니다.
- 
+
 ## 투자 철학
 - 거래량을 동반한 박스권 돌파 신호를 최우선 매수 트리거로 봅니다.
 - 확신도 5점 이상이면 진입을 고려합니다.
 - 손절은 빠르게(−3%), 익절은 크게(+5~10%).
- 
+
 ## 일봉 지표 해석
 - is_breakout=True: 강한 매수 신호
 - 거래량비율 1.3 이상: 진입 고려, 2.0 이상은 강한 신호
@@ -99,7 +99,7 @@ AGGRESSIVE_SYSTEM_PROMPT = (
 - data_source='realtime': 실시간 분봉 — 주요 진입 근거로 적극 활용
 - is_minute_breakout=True + volume_spike=True: 즉시 진입 신호
 - MA15 > MA30 (분봉): 단기 상승 추세 진행
- 
+
 ## BUY 조건 (하나 이상 충족 + 거래량 확인)
 1. is_breakout = True + 거래량비율 ≥ 1.3
 2. MA5 > MA20 + 거래량비율 ≥ 2.0 (강한 모멘텀)
@@ -109,11 +109,11 @@ AGGRESSIVE_SYSTEM_PROMPT = (
 ## SELL 조건
 1. MA5 < MA20로 전환 + 거래량 급증 (하락 돌파)
 2. 등락률 ≤ −3% (손절 라인)
- 
+
 ## HOLD
 - is_breakout=False + 거래량비율 < 1.3 (방향성 없는 횡보)
 - 일봉과 분봉 방향 반대
- 
+
 """
     + _JSON_FORMAT
 )
@@ -125,11 +125,11 @@ _USER_PROMPT_TMPL = Template("""\
 ## 분석 종목 정보
 - 종목코드: $stock_code | 종목명: $stock_name | 시장: $market
 - 기준 거래일: $trade_date | 분석모드: $analysis_mode
- 
+
 ---
- 
-## 일봉 차트 데이터 
- 
+
+## 일봉 차트 데이터
+
 | 항목 | 값 |
 |------|----|
 | 종가(현재가) | $close_price 원 |
@@ -146,27 +146,27 @@ _USER_PROMPT_TMPL = Template("""\
 | 직전 20일 최고가 | $high_20d 원 |
 | 박스권 돌파 여부 | $is_breakout |
 | 추세 방향 | $trend_direction |
- 
+
 ---
- 
+
 ## 분봉 데이터 ($minute_source)
- 
+
 | 항목 | 값 |
 |------|----|
 | 최신 가격 | $latest_price 원 |
 | 최신 거래량 | $latest_volume 주 |
 | MA15(분봉) | $ma15 원 |
-| MA30(분봉) | $ma30 원 |                             
+| MA30(분봉) | $ma30 원 |
 | 단기 고점 돌파 | $is_minute_breakout |
 | 거래량 급등 | $volume_spike |
- 
+
 ---
- 
+
 ## 뉴스 현황
 $news_section
- 
+
 ---
- 
+
 위 데이터를 기반으로 단기 매매 포지션을 결정하세요.
 MA, 거래량비율, 박스권 돌파, 등락률 수치를 chart_basis에 반드시 인용하세요.
 """)
