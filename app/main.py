@@ -6,6 +6,7 @@ from api.news import router as news_router
 from api.ranking import router as ranking_router
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
+from core.config import settings
 from fastapi import FastAPI
 
 setup_logging()
@@ -17,10 +18,10 @@ async def lifespan(app: FastAPI):
     # KIS API 초당 제한 방어 워커 시작
     await start_kis_worker()
 
-    disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
+    enable_scheduler = settings.ENABLE_SCHEDULER
     scheduler = None
 
-    if disable_scheduler:
+    if not enable_scheduler:
         logger.info("auth scheduler disabled")
     else:
         from tasks.auth_scheduler import AuthScheduler
