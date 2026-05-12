@@ -188,10 +188,7 @@ def _fmt(v: object) -> str:
 def _build_news_section(news_context: object) -> str:
     """AgentNewsContext → 프롬프트 문자열 변환."""
     if news_context is None:
-        return (
-            "**뉴스 데이터 없음** (Issue #5 미구현)\n"
-            "→ 차트 지표만으로 분석합니다. news_basis는 null로 반환하세요."
-        )
+        return "뉴스 데이터 없음 → 차트 지표만으로 분석합니다. news_basis는 null로 반환하세요."
 
     items = getattr(news_context, "news_items", [])
     if not items:

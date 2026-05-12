@@ -17,9 +17,11 @@ import pandas as pd
 from schemas.agent import (
     AgentAnalysisRequest,
     AgentNewsContext,
+    AgentNewsItem,
     DailyIndicators,
     MinuteIndicators,
 )
+from services.naver_news import NaverNewsError, search_news
 
 logger = logging.getLogger(__name__)
 
@@ -344,7 +346,7 @@ class MinuteDataAdapter:
         )
 
 
-# News Stub
+# 뉴스 수집
 
 
 class NewsDataAdapter:
@@ -352,9 +354,27 @@ class NewsDataAdapter:
     def fetch_latest_news(
         stock_code: str,
         stock_name: str | None = None,
+        display: int = 5,
     ) -> AgentNewsContext | None:
-        logger.debug("[NewsDataAdapter] %s 뉴스 미구현 → 차트 단독 분석", stock_code)
-        return None
+        query = stock_name or stock_code
+        try:
+            result = search_news(query=query, display=display, sort="date")
+        except NaverNewsError as exc:
+            logger.warning("[NewsDataAdapter] %s 뉴스 수집 실패: %s", stock_code, exc)
+            return None
+
+        items = [
+            AgentNewsItem(
+                title=item.title,
+                summary=item.description or None,
+                published_at=item.pub_date,
+                sentiment_score=None,
+            )
+            for item in result.items
+        ]
+
+        logger.debug("[NewsDataAdapter] %s 뉴스 %d건 수집", stock_code, len(items))
+        return AgentNewsContext(stock_code=stock_code, news_items=items, overall_sentiment=None)
 
 
 # 통합 오케스트레이터
