@@ -1,12 +1,11 @@
 import logging
-import os
 from contextlib import asynccontextmanager
 
 from api.news import router as news_router
 from api.ranking import router as ranking_router
+from core.config import settings
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
-from core.config import settings
 from fastapi import FastAPI
 
 setup_logging()
