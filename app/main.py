@@ -28,11 +28,7 @@ async def lifespan(app: FastAPI):
         scheduler = AuthScheduler()
         scheduler.start()
 
-    try:
-        yield
-    finally:
-        if auth_scheduler is not None:
-            auth_scheduler.stop()
+    yield
 
     if scheduler:
         scheduler.stop()
