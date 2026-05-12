@@ -10,9 +10,7 @@ class Settings(BaseSettings):
     ENABLE_SCHEDULER: bool = False
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
 
