@@ -9,7 +9,9 @@ from core.logging import setup_logging
 from core.config import settings
 from fastapi import FastAPI
 from routes.agent import router as agent_router
+from dotenv import load_dotenv
 
+load_dotenv()
 setup_logging()
 logger = logging.getLogger(__name__)
 
