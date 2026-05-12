@@ -112,7 +112,7 @@ class AgentService:
     def __init__(
         self,
         api_key: str | None = None,
-        model: str = "claude-sonnet-4-5",
+        model: str = "claude-sonnet-4-5-20250929",
         max_tokens: int = 1024,
         include_raw: bool = False,
     ) -> None:
