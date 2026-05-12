@@ -6,7 +6,8 @@ services:
       - "8000"
     volumes:
       - ./kis_devlp.yaml:/app/kis_devlp.yaml:ro # KIS 설정 파일
-      # - .env:/app/.env:ro # 환경 변수 파일이 필요하다면 추가
+    env_file:
+      - .env
     environment:
       - TZ=Asia/Seoul
       # 필요한 다른 환경 변수들 추가 (예: KIS_APPKEY, KIS_APPSECRET 등)
