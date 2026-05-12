@@ -17,9 +17,9 @@ from schemas.agent import (
     MinuteIndicators,
 )
 from schemas.core import BreakoutRequest
-from services.breakout import calculate_breakout, prepare_ohlcv_df
+from services.breakout import calculate_breakout
 from services.naver_news import NaverNewsError, search_news
-from services.scanner import fetch_chart_data, get_prev_minute
+from services.scanner import fetch_ohlcv_df
 
 logger = logging.getLogger(__name__)
 
@@ -75,38 +75,13 @@ class AgentDataOrchestrator:
         Raises:
             ValueError: 분봉 데이터를 가져올 수 없을 때
         """
-        # 1. 분봉 2회 fetch (scanner 패턴: 최신 120분 + 이전 120분)
-        batch1 = await fetch_chart_data(stock_code, market_div=market_div)
-        if not batch1:
+        # 1. 분봉 fetch (scanner.fetch_ohlcv_df 재사용)
+        df = await fetch_ohlcv_df(stock_code, market_div=market_div)
+        if df.empty:
             raise ValueError(
                 f"종목 '{stock_code}' 의 분봉 데이터를 가져올 수 없습니다. "
                 "stock_code 가 올바른지, KIS 인증이 정상인지 확인하세요."
             )
-
-        oldest = batch1[-1]
-        _, prev_time = get_prev_minute(
-            str(oldest["stck_bsop_date"]),
-            str(oldest["stck_cntg_hour"]).zfill(6),
-        )
-        batch2 = await fetch_chart_data(stock_code, end_time=prev_time, market_div=market_div)
-
-        combined = batch2[::-1] + batch1[::-1]
-
-        ohlcv = [
-            {
-                "date": f"{c['stck_bsop_date']}{str(c['stck_cntg_hour']).zfill(6)}",
-                "open": c["stck_oprc"],
-                "high": c["stck_hgpr"],
-                "low": c["stck_lwpr"],
-                "close": c["stck_prpr"],
-                "volume": c["cntg_vol"],
-            }
-            for c in combined
-        ]
-
-        df = prepare_ohlcv_df(ohlcv)
-        if df.empty:
-            raise ValueError(f"종목 '{stock_code}' 의 분봉 DataFrame 변환 실패.")
 
         # 2. 돌파 지표 계산 (breakout 패턴)
         breakout_result = calculate_breakout(df, BreakoutRequest())
