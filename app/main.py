@@ -3,6 +3,8 @@ import os
 from contextlib import asynccontextmanager
 
 from api.news import router as news_router
+from api.ranking import router as ranking_router
+from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from fastapi import FastAPI
 
@@ -12,15 +14,19 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # KIS API 초당 제한 방어 워커 시작
+    await start_kis_worker()
+
     disable_scheduler = os.getenv("DISABLE_SCHEDULER", "false").lower() == "true"
-    auth_scheduler = None
+    scheduler = None
 
     if disable_scheduler:
         logger.info("auth scheduler disabled")
     else:
-        from tasks.auth_scheduler import auth_scheduler
+        from tasks.auth_scheduler import AuthScheduler
 
-        auth_scheduler.start()
+        scheduler = AuthScheduler()
+        scheduler.start()
 
     try:
         yield
@@ -28,9 +34,15 @@ async def lifespan(app: FastAPI):
         if auth_scheduler is not None:
             auth_scheduler.stop()
 
+    if scheduler:
+        scheduler.stop()
+        logger.info("Auth scheduler stopped during shutdown")
+
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)
 app.include_router(news_router)
+
+app.include_router(ranking_router, prefix="/api")
 
 
 @app.get("/")
