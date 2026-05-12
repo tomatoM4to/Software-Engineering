@@ -22,13 +22,13 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from app.schemas.agent import (
+from schemas.agent import (
     AgentAnalysisRequest,
     AgentAutoRequest,
     AgentSignalResponse,
 )
-from app.services.agent_data import agent_data_orchestrator
-from app.services.agent_service import AgentService, get_agent_service
+from services.agent_data import agent_data_orchestrator
+from services.agent_service import AgentService, get_agent_service
 
 logger = logging.getLogger(__name__)
 
