@@ -1,11 +1,11 @@
 import html
-import os
 import re
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from typing import Any, Literal
 
 import requests
+from core.config import settings
 from schemas.news import NewsItem, NewsSearchResponse
 
 NAVER_NEWS_SEARCH_URL = "https://openapi.naver.com/v1/search/news.json"
@@ -33,15 +33,7 @@ def _parse_pub_date(value: str | None) -> datetime | None:
 
 
 def _get_credentials() -> tuple[str, str]:
-    client_id = os.getenv("NAVER_CLIENT_ID")
-    client_secret = os.getenv("NAVER_CLIENT_SECRET")
-
-    if not client_id or not client_secret:
-        raise NaverNewsError(
-            "NAVER_CLIENT_ID and NAVER_CLIENT_SECRET environment variables are required"
-        )
-
-    return client_id, client_secret
+    return settings.NAVER_CLIENT_ID, settings.NAVER_CLIENT_SECRET
 
 
 def _to_news_item(query: str, item: dict[str, Any]) -> NewsItem:
