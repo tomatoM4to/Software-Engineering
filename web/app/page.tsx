@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Zap, TrendingUp, Cpu, Activity } from "lucide-react";
+import { Loader2, Search, Zap, TrendingUp, Cpu, Activity, LineChart } from "lucide-react";
+import { StockChart } from "@/components/StockChart";
 
 export default function ApiTesterPage() {
   const [baseUrl, setBaseUrl] = useState("https://168.107.30.239.nip.io");
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, any>>({});
+  const [selectedStock, setSelectedStock] = useState<{code: string, name: string, market: string} | null>(null);
 
   // Form states
   const [agentForm, setAgentForm] = useState({ code: "005930", name: "", mode: "full" });
@@ -33,12 +35,18 @@ export default function ApiTesterPage() {
       const response = await fetch(`${baseUrl}${path}`, options);
       const data = await response.json();
       setResults((prev) => ({ ...prev, [key]: data }));
+      return data;
     } catch (error) {
       console.error(`Error calling ${path}:`, error);
       setResults((prev) => ({ ...prev, [key]: { error: String(error) } }));
     } finally {
       setLoading((prev) => ({ ...prev, [key]: false }));
     }
+  };
+
+  const handleStockClick = async (code: string, name: string, market: string) => {
+    setSelectedStock({ code, name, market });
+    await callApi('stock_chart', `/api/stock/chart/${code}?market=${market}&count=120`);
   };
 
   return (
@@ -316,7 +324,11 @@ export default function ApiTesterPage() {
                         <TableBody>
                           {results['strategy_breakout'].results?.length > 0 ? (
                             results['strategy_breakout'].results.slice(0, 20).map((item: any, i: number) => (
-                              <TableRow key={i}>
+                              <TableRow 
+                                key={i} 
+                                className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                                onClick={() => handleStockClick(item.code, item.name, strategyForm.market)}
+                              >
                                 <TableCell className="font-mono">{item.code}</TableCell>
                                 <TableCell className="font-medium">{item.name}</TableCell>
                                 <TableCell>{item.close?.toLocaleString()}</TableCell>
@@ -342,6 +354,31 @@ export default function ApiTesterPage() {
                         </TableBody>
                       </Table>
                     </div>
+
+                    {selectedStock && (
+                      <Card className="mt-6">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <div>
+                            <CardTitle className="text-lg">{selectedStock.name} ({selectedStock.code})</CardTitle>
+                            <CardDescription>1-minute candlestick chart</CardDescription>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedStock(null)}>Close</Button>
+                        </CardHeader>
+                        <CardContent>
+                          {loading['stock_chart'] ? (
+                            <div className="h-[400px] flex items-center justify-center">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : results['stock_chart']?.data ? (
+                            <StockChart data={results['stock_chart'].data} />
+                          ) : (
+                            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+                              Failed to load chart data.
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
               </CardContent>
