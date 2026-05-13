@@ -1,10 +1,11 @@
 "use client";
 
-import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 import React, { useEffect, useRef } from 'react';
 
 interface StockChartProps {
   data: any[];
+  maPeriods?: number[];
   colors?: {
     backgroundColor?: string;
     lineColor?: string;
@@ -14,9 +15,12 @@ interface StockChartProps {
   };
 }
 
+const MA_COLORS = ['#2962FF', '#FF6D00', '#4CAF50', '#9C27B0', '#E91E63'];
+
 export const StockChart = (props: StockChartProps) => {
   const {
     data,
+    maPeriods = [],
     colors: {
       backgroundColor = 'white',
       lineColor = '#2962FF',
@@ -28,6 +32,7 @@ export const StockChart = (props: StockChartProps) => {
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const maSeriesRefs = useRef<ISeriesApi<"Line">[]>([]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -54,7 +59,7 @@ export const StockChart = (props: StockChartProps) => {
     });
     chartRef.current = chart;
 
-    const candlestickSeries = chart.addCandlestickSeries({
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#ef5350',
         downColor: '#26a69a',
         borderVisible: false,
@@ -63,7 +68,7 @@ export const StockChart = (props: StockChartProps) => {
     });
     candlestickSeriesRef.current = candlestickSeries;
 
-    const volumeSeries = chart.addHistogramSeries({
+    const volumeSeries = chart.addSeries(HistogramSeries, {
         color: '#26a69a',
         priceFormat: {
             type: 'volume',
@@ -88,19 +93,49 @@ export const StockChart = (props: StockChartProps) => {
   }, [backgroundColor, textColor]);
 
   useEffect(() => {
-    if (candlestickSeriesRef.current && data) {
-      candlestickSeriesRef.current.setData(data);
-      
-      const volumeData = data.map(d => ({
-          time: d.time,
-          value: d.volume,
-          color: d.close >= d.open ? '#ef5350' : '#26a69a'
-      }));
-      volumeSeriesRef.current?.setData(volumeData);
-      
-      chartRef.current?.timeScale().fitContent();
-    }
-  }, [data]);
+    if (!chartRef.current || !candlestickSeriesRef.current || !data || data.length === 0) return;
+
+    // Clear old MA series
+    maSeriesRefs.current.forEach(s => chartRef.current?.removeSeries(s));
+    maSeriesRefs.current = [];
+
+    // Set Candlestick data
+    candlestickSeriesRef.current.setData(data);
+    
+    // Set Volume data
+    const volumeData = data.map(d => ({
+        time: d.time,
+        value: d.volume,
+        color: d.close >= d.open ? '#ef5350' : '#26a69a'
+    }));
+    volumeSeriesRef.current?.setData(volumeData);
+
+    // Calculate and Add MA series
+    maPeriods.forEach((period, index) => {
+        if (data.length < period) return;
+
+        const maData = [];
+        for (let i = period - 1; i < data.length; i++) {
+            const sum = data.slice(i - period + 1, i + 1).reduce((acc, curr) => acc + curr.close, 0);
+            maData.push({
+                time: data[i].time,
+                value: sum / period,
+            });
+        }
+
+        if (maData.length > 0) {
+            const maSeries = chartRef.current!.addSeries(LineSeries, {
+                color: MA_COLORS[index % MA_COLORS.length],
+                lineWidth: 1,
+                title: `MA${period}`,
+            });
+            maSeries.setData(maData);
+            maSeriesRefs.current.push(maSeries);
+        }
+    });
+    
+    chartRef.current?.timeScale().fitContent();
+  }, [data, maPeriods]);
 
   return (
     <div

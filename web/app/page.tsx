@@ -49,6 +49,12 @@ export default function ApiTesterPage() {
     await callApi('stock_chart', `/api/stock/chart/${code}?market=${market}&count=120`);
   };
 
+  const getMaPeriods = () => {
+    const anchor = parseInt(strategyForm.ma);
+    const targets = strategyForm.targetMas.split(',').map(m => parseInt(m.trim())).filter(m => !isNaN(m));
+    return [anchor, ...targets].sort((a, b) => a - b);
+  };
+
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
       <div className="flex flex-col gap-8">
@@ -370,7 +376,10 @@ export default function ApiTesterPage() {
                               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                             </div>
                           ) : results['stock_chart']?.data ? (
-                            <StockChart data={results['stock_chart'].data} />
+                            <StockChart 
+                              data={results['stock_chart'].data} 
+                              maPeriods={getMaPeriods()}
+                            />
                           ) : (
                             <div className="h-[400px] flex items-center justify-center text-muted-foreground">
                               Failed to load chart data.
