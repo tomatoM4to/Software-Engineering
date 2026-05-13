@@ -4,12 +4,15 @@ from core.kis_fetch import async_url_fetch
 
 logger = logging.getLogger(__name__)
 
-async def get_stock_chart(iscd: str, market_div: str = "J", count: int = 120):
+async def get_stock_chart(iscd: str, count: int = 120):
     """
     주식일별분봉조회 API(FHKST03010230)를 사용하여 1분봉 데이터 120개를 한 번에 가져옵니다.
     """
     api_url = "/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice"
     
+    # 시장 구분 코드: 국내 주식(코스피/코스닥)은 'J'를 사용합니다.
+    req_market_div = "J"
+
     # 오늘 날짜와 현재 시간 설정
     now = datetime.now()
     # 장 중이 아닐 때를 고려하여 15:30으로 넉넉하게 잡거나 현재 시간을 사용
@@ -18,7 +21,7 @@ async def get_stock_chart(iscd: str, market_div: str = "J", count: int = 120):
     current_time = "153000" if now.hour >= 16 else now.strftime("%H%M%S")
 
     params = {
-        "FID_COND_MRKT_DIV_CODE": market_div,
+        "FID_COND_MRKT_DIV_CODE": req_market_div,
         "FID_INPUT_ISCD": iscd,
         "FID_INPUT_HOUR_1": current_time,
         "FID_INPUT_DATE_1": current_date,
