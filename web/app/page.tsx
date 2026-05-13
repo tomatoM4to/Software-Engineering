@@ -273,22 +273,26 @@ export default function ApiTesterPage() {
                             <TableHead>Code</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Price</TableHead>
-                            <TableHead>Change %</TableHead>
+                            <TableHead>Score</TableHead>
                             <TableHead>Category</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {results['strategy_breakout'].results?.length > 0 ? (
-                            results['strategy_breakout'].results.slice(0, 10).map((item: any, i: number) => (
+                            results['strategy_breakout'].results.slice(0, 20).map((item: any, i: number) => (
                               <TableRow key={i}>
-                                <TableCell className="font-mono">{item.stock_code}</TableCell>
-                                <TableCell className="font-medium">{item.stock_name}</TableCell>
-                                <TableCell>{parseInt(item.current_price).toLocaleString()}</TableCell>
-                                <TableCell className={parseFloat(item.change_rate) >= 0 ? 'text-red-500' : 'text-blue-500'}>
-                                  {item.change_rate}%
+                                <TableCell className="font-mono">{item.code}</TableCell>
+                                <TableCell className="font-medium">{item.name}</TableCell>
+                                <TableCell>{item.close?.toLocaleString()}</TableCell>
+                                <TableCell className="font-mono text-xs">
+                                  {item.convergence_score?.toFixed(4)}
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant={item.breakout_category === 'NONE' ? 'secondary' : 'default'}>
+                                  <Badge variant={item.breakout_category === 'NONE' ? 'secondary' : 'default'} className={
+                                    item.breakout_category === 'BREAKOUT_STRONG' ? 'bg-red-500' :
+                                    item.breakout_category === 'BREAKOUT_NORMAL' ? 'bg-orange-500' :
+                                    item.breakout_category === 'READY' ? 'bg-blue-500' : ''
+                                  }>
                                     {item.breakout_category}
                                   </Badge>
                                 </TableCell>
