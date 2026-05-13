@@ -246,7 +246,7 @@ def build_user_prompt(request: object) -> str:
         latest_price=_fmt(m.latest_price),
         latest_volume=_fmt(m.latest_volume),
         ma15=_fmt(m.ma15),
-        ma30=_fmt(m.ma30),      
+        ma30=_fmt(m.ma30),
         is_minute_breakout=_fmt(m.is_minute_breakout),
         volume_spike=_fmt(m.volume_spike),
         news_section=_build_news_section(request.news_context),
