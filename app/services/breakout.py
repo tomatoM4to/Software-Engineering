@@ -92,15 +92,15 @@ def calculate_breakout(df: pd.DataFrame, request) -> dict[str, Any]:
         < request.convergence_threshold
     )
 
-    # 2. 돌파 여부 확인
+    # 2. 돌파 여부 확인 (실전에선 = 빼는게 좋음)
     if request.breakout_ma == 1:
         is_breaking_out = (df["Close"] > df[f"MA{request.anchor_ma}"]) & (
-            df["Open"] < df["Close"]
+            df["Open"] <= df["Close"]
         )
     else:
         is_breaking_out = (
             df[f"MA{request.breakout_ma}"] > df[f"MA{request.anchor_ma}"]
-        ) & (df["Open"] < df["Close"])
+        ) & (df["Open"] <= df["Close"])
 
     # 3. 거래량 폭발 확인
     df["Vol_MA"] = df["Volume"].rolling(window=request.volume_ma_window).mean().shift(1)
