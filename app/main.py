@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from api.news import router as news_router
+from api.strategy import router as strategy_router
 from api.ranking import router as ranking_router
 from core.config import settings
 from core.kis_fetch import start_kis_worker
@@ -39,6 +40,7 @@ app = FastAPI(title="Trading Server", lifespan=lifespan)
 app.include_router(news_router)
 
 app.include_router(ranking_router, prefix="/api")
+app.include_router(strategy_router, prefix="/api")
 
 
 @app.get("/")
