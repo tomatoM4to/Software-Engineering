@@ -20,6 +20,3 @@ def get_settings():
 
 
 settings = get_settings()
-
-client_id = settings.NAVER_CLIENT_ID
-client_secret = settings.NAVER_CLIENT_SECRET
