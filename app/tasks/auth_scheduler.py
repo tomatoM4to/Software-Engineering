@@ -48,7 +48,7 @@ class AuthScheduler:
         self.scheduler.start()
 
         # 서버 부팅 직후 인증 상태를 보장하기 위해 즉시 1회 수행
-        self._bg_task = asyncio.create_task(self.refresh_auth_job())
+        self._bg_task = asyncio.create_task(self.refresh_auth_job(force=True))
         self._is_running = True
         logger.info("Auth scheduler started")
 
@@ -63,11 +63,11 @@ class AuthScheduler:
         self._is_running = False
         logger.info("Auth scheduler stopped")
 
-    async def refresh_auth_job(self) -> None:
+    async def refresh_auth_job(self, force: bool = False) -> None:
         """실제 인증 작업을 수행하는 스케줄러 Job."""
         try:
-            await asyncio.to_thread(auth)
-            logger.info("Background auth refresh completed")
+            await asyncio.to_thread(auth, force=force)
+            logger.info("Background auth refresh completed (force=%s)", force)
         except asyncio.CancelledError:
             raise
         except Exception as e:
