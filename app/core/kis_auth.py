@@ -84,7 +84,7 @@ def get_base_header():
 def auth(
     svr: str | RunMode = RunMode.PROD,
     product: ProductCode = _kis_cfg.my_prod,
-    force: bool = False
+    force: bool = False,
 ):
     """
     - access_token 발급

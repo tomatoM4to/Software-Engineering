@@ -1,16 +1,15 @@
 import logging
 from contextlib import asynccontextmanager
 
-from api.news import router as news_router
-from api.strategy import router as strategy_router
-from api.ranking import router as ranking_router
 from api.agent import router as agent_router
+from api.news import router as news_router
+from api.ranking import router as ranking_router
+from api.strategy import router as strategy_router
 from core.config import settings
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
-from core.config import settings
-from fastapi import FastAPI
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
 load_dotenv()
 setup_logging()

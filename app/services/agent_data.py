@@ -52,7 +52,9 @@ class NewsDataAdapter:
         ]
 
         logger.debug("[NewsDataAdapter] %s 뉴스 %d건 수집", stock_code, len(items))
-        return AgentNewsContext(stock_code=stock_code, news_items=items, overall_sentiment=None)
+        return AgentNewsContext(
+            stock_code=stock_code, news_items=items, overall_sentiment=None
+        )
 
 
 # 통합 오케스트레이터
@@ -92,7 +94,9 @@ class AgentDataOrchestrator:
         latest_volume = int(float(latest["Volume"]))
 
         def _flt(series: pd.Series, window: int) -> float:
-            return round(float(series.rolling(window, min_periods=1).mean().iloc[-1]), 2)
+            return round(
+                float(series.rolling(window, min_periods=1).mean().iloc[-1]), 2
+            )
 
         ma5 = _flt(df["Close"], 5)
         ma20 = _flt(df["Close"], 20)
@@ -101,9 +105,15 @@ class AgentDataOrchestrator:
         volume_ratio = round(latest_volume / vol_ma20, 2) if vol_ma20 > 0 else None
 
         prev_close_val = df["Close"].shift(1).iloc[-1]
-        prev_close = int(float(prev_close_val)) if len(df) > 1 and pd.notna(prev_close_val) else None
+        prev_close = (
+            int(float(prev_close_val))
+            if len(df) > 1 and pd.notna(prev_close_val)
+            else None
+        )
         change_rate = (
-            round((latest_close - prev_close) / prev_close * 100, 2) if prev_close else None
+            round((latest_close - prev_close) / prev_close * 100, 2)
+            if prev_close
+            else None
         )
 
         high_20d_val = df["High"].shift(1).rolling(20, min_periods=5).max().iloc[-1]

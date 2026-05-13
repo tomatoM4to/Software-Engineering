@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class BreakoutRequest(BaseModel):
     """돌파 전략 분석 요청 파라미터"""
 

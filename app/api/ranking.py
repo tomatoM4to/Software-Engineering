@@ -1,9 +1,7 @@
 # app/api/ranking.py
-from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from services.ranking_list import get_volume_rank
-from services.scanner import get_breakout_rankings
 
 router = APIRouter(prefix="/ranking", tags=["ranking"])
 
