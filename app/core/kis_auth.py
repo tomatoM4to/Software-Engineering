@@ -82,7 +82,9 @@ def get_base_header():
 
 
 def auth(
-    svr: str | RunMode = RunMode.PROD, product: ProductCode = _kis_cfg.my_prod, url=None
+    svr: str | RunMode = RunMode.PROD,
+    product: ProductCode = _kis_cfg.my_prod,
+    force: bool = False
 ):
     """
     - access_token 발급
@@ -102,7 +104,7 @@ def auth(
 
     saved_token: str | None = read_token()
 
-    if saved_token is None:
+    if saved_token is None or force:
         p = {
             "grant_type": "client_credentials",
             "appkey": appkey,
