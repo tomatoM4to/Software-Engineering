@@ -10,6 +10,7 @@ from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 setup_logging()
@@ -40,6 +41,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Trading Server", lifespan=lifespan)
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 테스트용으로 모든 도메인 허용
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(news_router)
 
 app.include_router(ranking_router, prefix="/api")
