@@ -16,7 +16,7 @@ from schemas.agent import (
     DailyIndicators,
     MinuteIndicators,
 )
-from schemas.core import BreakoutRequest
+from schemas.breakout import BreakoutRequest
 from services.breakout import calculate_breakout
 from services.naver_news import NaverNewsError, search_news
 from services.scanner import fetch_ohlcv_df
