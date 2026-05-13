@@ -45,11 +45,41 @@ async def fetch_chart_data(iscd: str, end_time: str = "", market_div: str = "J")
         "FID_PW_DATA_INCU_YN": "Y",
         "FID_ETC_CLS_CODE": "",
     }
-    # tr_id: FHKST03010200
     res = await async_url_fetch(api_url, "FHKST03010200", "", params)
     if res.is_ok():
         return res.get_body().output2
     return []
+
+
+async def fetch_ohlcv_df(iscd: str, market_div: str = "J"):
+    """
+    1분봉 2회 fetch(약 240분) 후 OHLCV DataFrame으로 반환.
+    데이터가 없으면 빈 DataFrame을 반환합니다.
+    """
+    batch1 = await fetch_chart_data(iscd, market_div=market_div)
+    if not batch1:
+        return prepare_ohlcv_df([])
+
+    oldest = batch1[-1]
+    _, prev_time = get_prev_minute(
+        str(oldest["stck_bsop_date"]),
+        str(oldest["stck_cntg_hour"]).zfill(6),
+    )
+    batch2 = await fetch_chart_data(iscd, end_time=prev_time, market_div=market_div)
+
+    combined = batch2[::-1] + batch1[::-1]
+    ohlcv = [
+        {
+            "date": f"{c['stck_bsop_date']}{str(c['stck_cntg_hour']).zfill(6)}",
+            "open": c["stck_oprc"],
+            "high": c["stck_hgpr"],
+            "low": c["stck_lwpr"],
+            "close": c["stck_prpr"],
+            "volume": c["cntg_vol"],
+        }
+        for c in combined
+    ]
+    return prepare_ohlcv_df(ohlcv)
 
 
 async def fetch_and_analyze_stock(
@@ -59,37 +89,9 @@ async def fetch_and_analyze_stock(
     종목별 1분봉 데이터를 2회 페칭(240분)하여 breakout 분석을 수행합니다.
     """
     try:
-        # Batch 1: 최신 120분
-        batch1 = await fetch_chart_data(iscd, market_div=market_div)
-        if not batch1:
+        df = await fetch_ohlcv_df(iscd, market_div)
+        if df.empty:
             return None
-
-        # Batch 2: 이전 120분
-        oldest = batch1[-1]
-        _, prev_time = get_prev_minute(
-            oldest["stck_bsop_date"], oldest["stck_cntg_hour"]
-        )
-        batch2 = await fetch_chart_data(iscd, end_time=prev_time, market_div=market_div)
-
-        # 합치기 (과거 -> 최신 순서로 정렬 필요)
-        # KIS 응답은 최신이 0번 인덱스이므로 역순으로 합침
-        combined = batch2[::-1] + batch1[::-1]
-
-        # OHLCV 포맷 변환
-        ohlcv = []
-        for c in combined:
-            ohlcv.append(
-                {
-                    "date": f"{c['stck_bsop_date']}{c['stck_cntg_hour']}",
-                    "open": c["stck_oprc"],
-                    "high": c["stck_hgpr"],
-                    "low": c["stck_lwpr"],
-                    "close": c["stck_prpr"],
-                    "volume": c["cntg_vol"],
-                }
-            )
-
-        df = prepare_ohlcv_df(ohlcv)
         result = calculate_breakout(df, request_params)
         result.update({"code": iscd, "name": name})
         return result

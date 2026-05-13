@@ -7,8 +7,12 @@ from api.ranking import router as ranking_router
 from core.config import settings
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
+from core.config import settings
 from fastapi import FastAPI
+from routes.agent import router as agent_router
+from dotenv import load_dotenv
 
+load_dotenv()
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -41,6 +45,7 @@ app.include_router(news_router)
 
 app.include_router(ranking_router, prefix="/api")
 app.include_router(strategy_router, prefix="/api")
+app.include_router(agent_router, prefix="/api")
 
 
 @app.get("/")
