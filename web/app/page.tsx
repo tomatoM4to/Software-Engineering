@@ -51,10 +51,10 @@ export default function ApiTesterPage() {
           </div>
           <div className="flex items-center gap-2 max-w-sm w-full">
             <Label htmlFor="baseUrl" className="whitespace-nowrap font-medium">Base URL</Label>
-            <Input 
-              id="baseUrl" 
-              placeholder="API Base URL" 
-              value={baseUrl} 
+            <Input
+              id="baseUrl"
+              placeholder="API Base URL"
+              value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               className="font-mono text-sm"
             />
@@ -87,8 +87,8 @@ export default function ApiTesterPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => callApi('agent_health', '/api/agent/health')}
                     disabled={loading['agent_health']}
@@ -113,18 +113,18 @@ export default function ApiTesterPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="stock_code">Stock Code</Label>
-                      <Input 
-                        id="stock_code" 
-                        placeholder="e.g. 005930" 
-                        value={agentForm.code} 
+                      <Input
+                        id="stock_code"
+                        placeholder="e.g. 005930"
+                        value={agentForm.code}
                         onChange={(e) => setAgentForm({...agentForm, code: e.target.value})}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="stock_name">Stock Name (Optional)</Label>
-                      <Input 
-                        id="stock_name" 
-                        placeholder="e.g. 삼성전자" 
+                      <Input
+                        id="stock_name"
+                        placeholder="e.g. 삼성전자"
                         value={agentForm.name}
                         onChange={(e) => setAgentForm({...agentForm, name: e.target.value})}
                       />
@@ -133,21 +133,22 @@ export default function ApiTesterPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="analysis_mode">Mode</Label>
-                      <Select 
-                        value={agentForm.mode} 
+                      <Select
+                        value={agentForm.mode}
                         onValueChange={(val) => setAgentForm({...agentForm, mode: val})}
                       >
                         <SelectTrigger id="analysis_mode">
                           <SelectValue placeholder="Select mode" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="full">Full (Conservative + Aggressive)</SelectItem>
-                          <SelectItem value="fast">Fast (Single Persona)</SelectItem>
+                          <SelectItem value="swing_short">Swing (Short-term)</SelectItem>
+                          <SelectItem value="day_trade">Day Trading</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+
                     <div className="space-y-2 flex items-end">
-                      <Button 
+                      <Button
                         className="w-full"
                         onClick={() => callApi('agent_analyze', '/api/agent/analyze/auto', 'POST', {
                           stock_code: agentForm.code,
@@ -169,7 +170,7 @@ export default function ApiTesterPage() {
                         <div className="flex flex-col gap-1">
                           <span className="text-muted-foreground text-xs uppercase font-bold">Position</span>
                           <Badge className={
-                            results['agent_analyze'].final_position === 'BUY' ? 'bg-red-500' : 
+                            results['agent_analyze'].final_position === 'BUY' ? 'bg-red-500' :
                             results['agent_analyze'].final_position === 'SELL' ? 'bg-blue-500' : 'bg-zinc-500'
                           }>
                             {results['agent_analyze'].final_position || 'UNKNOWN'}
@@ -177,10 +178,45 @@ export default function ApiTesterPage() {
                         </div>
                         <div className="flex flex-col gap-1">
                           <span className="text-muted-foreground text-xs uppercase font-bold">Confidence</span>
-                          <span className="text-lg font-mono">{(results['agent_analyze'].final_confidence * 100).toFixed(1)}%</span>
+                          <span className="text-lg font-mono">{(results['agent_analyze'].final_confidence * 10).toFixed(0)}%</span>
                         </div>
                       </div>
-                      <div className="mt-4 p-3 rounded bg-white dark:bg-black border text-xs overflow-auto max-h-[300px]">
+
+                      <div className="mt-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2 p-3 rounded border bg-white dark:bg-zinc-900">
+                            <h5 className="text-sm font-bold flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                              Conservative Agent
+                            </h5>
+                            <div className="text-xs space-y-2">
+                              <p className="font-medium text-zinc-500">Position: <Badge variant="outline" className="h-4 text-[10px]">{results['agent_analyze'].conservative_agent?.position}</Badge></p>
+                              <p className="leading-relaxed">{results['agent_analyze'].conservative_agent?.reasoning?.chart_basis}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2 p-3 rounded border bg-white dark:bg-zinc-900">
+                            <h5 className="text-sm font-bold flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                              Aggressive Agent
+                            </h5>
+                            <div className="text-xs space-y-2">
+                              <p className="font-medium text-zinc-500">Position: <Badge variant="outline" className="h-4 text-[10px]">{results['agent_analyze'].aggressive_agent?.position}</Badge></p>
+                              <p className="leading-relaxed">{results['agent_analyze'].aggressive_agent?.reasoning?.chart_basis}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-bold">Key Signals</h5>
+                          <div className="flex flex-wrap gap-2">
+                            {results['agent_analyze'].aggregated_signals?.map((s: string, i: number) => (
+                              <Badge key={i} variant="secondary" className="text-[10px] py-0">{s}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 p-3 rounded bg-zinc-100 dark:bg-zinc-900 border text-[10px] overflow-auto max-h-[200px] font-mono">
                          <pre>{JSON.stringify(results['agent_analyze'], null, 2)}</pre>
                       </div>
                     </div>
@@ -201,8 +237,8 @@ export default function ApiTesterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="market">Market</Label>
-                    <Select 
-                      value={strategyForm.market} 
+                    <Select
+                      value={strategyForm.market}
                       onValueChange={(val) => setStrategyForm({...strategyForm, market: val})}
                     >
                       <SelectTrigger id="market">
@@ -216,34 +252,34 @@ export default function ApiTesterPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="anchor_ma">Anchor MA</Label>
-                    <Input 
-                      id="anchor_ma" 
-                      type="number" 
+                    <Input
+                      id="anchor_ma"
+                      type="number"
                       value={strategyForm.ma}
                       onChange={(e) => setStrategyForm({...strategyForm, ma: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="target_mas">Target MAs (comma separated)</Label>
-                    <Input 
-                      id="target_mas" 
-                      placeholder="e.g. 5,10,60" 
+                    <Label htmlFor="target_mas">Target MAs</Label>
+                    <Input
+                      id="target_mas"
+                      placeholder="e.g. 5,10,60"
                       value={strategyForm.targetMas}
                       onChange={(e) => setStrategyForm({...strategyForm, targetMas: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="convergence">Threshold (%)</Label>
-                    <Input 
-                      id="convergence" 
-                      type="number" 
-                      step="0.1" 
+                    <Input
+                      id="convergence"
+                      type="number"
+                      step="0.1"
                       value={strategyForm.threshold}
                       onChange={(e) => setStrategyForm({...strategyForm, threshold: e.target.value})}
                     />
                   </div>
                   <div className="space-y-2 flex items-end">
-                    <Button 
+                    <Button
                       className="w-full"
                       onClick={() => {
                         const targetMasParams = strategyForm.targetMas.split(',').map(m => `target_mas=${m.trim()}`).join('&');
@@ -265,7 +301,7 @@ export default function ApiTesterPage() {
                       <Badge className="bg-orange-500">Normal: {results['strategy_breakout'].summary?.breakout_normal}</Badge>
                       <Badge className="bg-blue-500">Ready: {results['strategy_breakout'].summary?.ready}</Badge>
                     </div>
-                    
+
                     <div className="rounded-md border overflow-hidden">
                       <Table>
                         <TableHeader>
@@ -320,7 +356,7 @@ export default function ApiTesterPage() {
                 <CardDescription>Get top stocks by trading volume.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
+                <Button
                   onClick={() => callApi('ranking_volume', '/api/ranking/volume')}
                   disabled={loading['ranking_volume']}
                 >
@@ -378,13 +414,13 @@ export default function ApiTesterPage() {
               <CardContent className="space-y-4">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <Input 
-                      placeholder="Enter keywords..." 
-                      value={newsQuery} 
+                    <Input
+                      placeholder="Enter keywords..."
+                      value={newsQuery}
                       onChange={(e) => setNewsQuery(e.target.value)}
                     />
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => callApi('news_search', `/news/search?query=${encodeURIComponent(newsQuery)}`)}
                     disabled={loading['news_search']}
                   >
