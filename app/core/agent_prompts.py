@@ -49,29 +49,29 @@ CONSERVATIVE_SYSTEM_PROMPT = (
 - 확신도 7점 이상일 때만 BUY/SELL을 결정하고, 미달 시 반드시 HOLD합니다.
 
 ## 일봉 지표 해석
-- MA5 > MA20 > MA60 정배열: 매수 기본 조건
+- 이동평균선(MA) 정배열(단기 > 중기 > 장기): 매수 기본 조건
 - 거래량비율 1.5 이상: 유의미한 거래량 증가
 - 등락률 +3% 초과: 추격 매수 절대 금지
 - is_breakout=True: 20일 고점 돌파 — 거래량 동반 필수
 
 ## 분봉 지표 해석
+- 사용자가 설정한 **앵커 MA 및 타겟 MA**를 기준으로 돌파와 수렴을 판단합니다.
 - data_source='realtime': KIS 실시간 분봉 (신뢰도 높음)
-- data_source='daily_proxy': 일봉 근사치 (참고용)
 - is_minute_breakout=True + volume_spike=True: 분봉 돌파 확인 신호
 
 ## BUY 조건 (아래 모두 충족)
-1. MA5 > MA20 (단기 정배열)
+1. 단기 MA > 중기 MA (단기 정배열)
 2. 거래량비율 ≥ 1.5
 3. is_breakout = True
 4. 등락률 < +3% (추격 매수 금지)
 
 ## SELL 조건
-1. MA5 < MA20 (단기 역배열) + 거래량비율 ≥ 1.5
-2. 등락률 ≤ −5% (급락 손절)
+1. 단기 MA < 중기 MA (단기 역배열) + 거래량비율 ≥ 1.5
+2. 등락률 ≤ -5% (급락 손절)
 
 ## HOLD 우선
 - 위 조건 미달 시 반드시 HOLD
-- MA 배열 불명확(MA5 ≈ MA20) 시 HOLD
+- MA 배열 불명확 시 HOLD
 - 뉴스 없어도 차트만으로 판단 가능, 단 확신도는 낮게 부여
 
 """
@@ -88,7 +88,7 @@ AGGRESSIVE_SYSTEM_PROMPT = (
 ## 투자 철학
 - 거래량을 동반한 박스권 돌파 신호를 최우선 매수 트리거로 봅니다.
 - 확신도 5점 이상이면 진입을 고려합니다.
-- 손절은 빠르게(−3%), 익절은 크게(+5~10%).
+- 손절은 빠르게(-3%), 익절은 크게(+5~10%).
 
 ## 일봉 지표 해석
 - is_breakout=True: 강한 매수 신호
@@ -96,19 +96,19 @@ AGGRESSIVE_SYSTEM_PROMPT = (
 - 등락률 +1~+5%: 이상적인 진입 타점
 
 ## 분봉 지표 해석
-- data_source='realtime': 실시간 분봉 — 주요 진입 근거로 적극 활용
+- **전략 파라미터(Anchor/Target MA)**를 기반으로 한 돌파 신호를 주요 진입 근거로 활용합니다.
 - is_minute_breakout=True + volume_spike=True: 즉시 진입 신호
-- MA15 > MA30 (분봉): 단기 상승 추세 진행
+- 분봉 MA 추세 상승 진행 시 가점
 
 ## BUY 조건 (하나 이상 충족 + 거래량 확인)
 1. is_breakout = True + 거래량비율 ≥ 1.3
-2. MA5 > MA20 + 거래량비율 ≥ 2.0 (강한 모멘텀)
+2. 이동평균선 정배열 + 거래량비율 ≥ 2.0 (강한 모멘텀)
 3. 등락률 +1~+5% + is_breakout = True
 4. (realtime) is_minute_breakout=True + volume_spike=True
 
 ## SELL 조건
-1. MA5 < MA20로 전환 + 거래량 급증 (하락 돌파)
-2. 등락률 ≤ −3% (손절 라인)
+1. 단기 MA < 중기 MA로 전환 + 거래량 급증 (하락 돌파)
+2. 등락률 ≤ -3% (손절 라인)
 
 ## HOLD
 - is_breakout=False + 거래량비율 < 1.3 (방향성 없는 횡보)
@@ -124,7 +124,7 @@ AGGRESSIVE_SYSTEM_PROMPT = (
 _USER_PROMPT_TMPL = Template("""\
 ## 분석 종목 정보
 - 종목코드: $stock_code | 종목명: $stock_name | 시장: $market
-- 기준 거래일: $trade_date | 분석모드: $analysis_mode
+- 기준 거래일: $trade_date | 분석모드(페르소나): $ai_persona
 
 ---
 
@@ -138,9 +138,7 @@ _USER_PROMPT_TMPL = Template("""\
 | 전일 대비 등락률 | $change_rate% |
 | 거래량 | $volume 주 |
 | 거래대금 | $turnover 원 |
-| MA5 | $ma5 원 |
-| MA20 | $ma20 원 |
-| MA60 | $ma60 원 |
+| MA5 / MA20 / MA60 | $ma5 / $ma20 / $ma60 원 |
 | 20일 평균 거래량 | $volume_ma20 주 |
 | 거래량 비율(현재/20일평균) | $volume_ratio |
 | 직전 20일 최고가 | $high_20d 원 |
@@ -150,14 +148,15 @@ _USER_PROMPT_TMPL = Template("""\
 ---
 
 ## 분봉 데이터 ($minute_source)
+- **전략 파라미터**: 앵커 MA($anchor_ma), 타겟 MA($target_mas)
 
 | 항목 | 값 |
 |------|----|
 | 최신 가격 | $latest_price 원 |
 | 최신 거래량 | $latest_volume 주 |
-| MA15(분봉) | $ma15 원 |
-| MA30(분봉) | $ma30 원 |
-| 단기 고점 돌파 | $is_minute_breakout |
+| 타겟 MA(대표) | $ma_target 원 |
+| 앵커 MA | $ma_anchor 원 |
+| 전략 돌파 여부 | $is_minute_breakout |
 | 거래량 급등 | $volume_spike |
 
 ---
@@ -168,7 +167,7 @@ $news_section
 ---
 
 위 데이터를 기반으로 단기 매매 포지션을 결정하세요.
-MA, 거래량비율, 박스권 돌파, 등락률 수치를 chart_basis에 반드시 인용하세요.
+특히 사용자가 설정한 전략 파라미터(MA $anchor_ma 등)와 돌파 여부를 chart_basis에 반드시 언급하세요.
 """)
 
 
@@ -225,7 +224,7 @@ def build_user_prompt(request: object) -> str:
         stock_name=request.stock_name or "N/A",
         market=request.market or "N/A",
         trade_date=d.trade_date,
-        analysis_mode=request.analysis_mode,
+        ai_persona=request.ai_persona,
         close_price=_fmt(d.close_price),
         open_price=_fmt(d.open_price),
         high_price=_fmt(d.high_price),
@@ -245,8 +244,10 @@ def build_user_prompt(request: object) -> str:
         minute_source=f"{m.data_source}/{m.timeframe}",
         latest_price=_fmt(m.latest_price),
         latest_volume=_fmt(m.latest_volume),
-        ma15=_fmt(m.ma15),
-        ma30=_fmt(m.ma30),
+        anchor_ma=request.anchor_ma,
+        target_mas=", ".join(map(str, request.target_mas)),
+        ma_target=_fmt(m.ma15),
+        ma_anchor=_fmt(m.ma30),
         is_minute_breakout=_fmt(m.is_minute_breakout),
         volume_spike=_fmt(m.volume_spike),
         news_section=_build_news_section(request.news_context),

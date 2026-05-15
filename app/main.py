@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from api.agent import router as agent_router
 from api.news import router as news_router
 from api.ranking import router as ranking_router
-from api.strategy import router as strategy_router
 from api.stock import router as stock_router
+from api.strategy import router as strategy_router
 from core.config import settings
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
