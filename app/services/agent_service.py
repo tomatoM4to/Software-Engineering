@@ -159,9 +159,9 @@ class AgentService:
         prompt = build_user_prompt(request)
 
         logger.info(
-            "[AgentService] 분석 시작 — 종목:%s 모드:%s",
+            "[AgentService] 분석 시작 — 종목:%s 페르소나:%s",
             request.stock_code,
-            request.analysis_mode,
+            request.ai_persona,
         )
 
         (con_resp, con_ms), (agg_resp, agg_ms) = await asyncio.gather(
@@ -194,7 +194,7 @@ class AgentService:
             stock_code=request.stock_code,
             stock_name=request.stock_name,
             market=request.market,
-            analysis_mode=request.analysis_mode,
+            ai_persona=request.ai_persona,
             trade_date=request.daily_indicators.trade_date,
             conservative_agent=con_resp,
             aggressive_agent=agg_resp,
@@ -236,7 +236,7 @@ class AgentService:
             stock_code=request.stock_code,
             stock_name=request.stock_name,
             market=request.market,
-            analysis_mode=request.analysis_mode,
+            ai_persona=request.ai_persona,
             trade_date=request.daily_indicators.trade_date,
             conservative_agent=err_agent,
             aggressive_agent=err_agent.model_copy(

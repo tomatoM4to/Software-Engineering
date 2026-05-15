@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+
 from core.kis_fetch import async_url_fetch
 
 logger = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ async def get_stock_chart(iscd: str, count: int = 120):
     주식일별분봉조회 API(FHKST03010230)를 사용하여 1분봉 데이터 120개를 한 번에 가져옵니다.
     """
     api_url = "/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice"
-    
+
     # 시장 구분 코드: 국내 주식(코스피/코스닥)은 'J'를 사용합니다.
     req_market_div = "J"
 
@@ -28,17 +29,17 @@ async def get_stock_chart(iscd: str, count: int = 120):
         "FID_PW_DATA_INCU_YN": "Y", # 과거 데이터 포함
         "FID_FAKE_TICK_INCU_YN": "N",
     }
-    
+
     # TR_ID: FHKST03010230 (주식일별분봉조회)
     res = await async_url_fetch(api_url, "FHKST03010230", "", params)
-    
+
     if not res.is_ok():
         logger.error(f"Failed to fetch chart data: {res.get_error_message()}")
         return []
 
     # output2에 분봉 데이터가 배열로 들어있음 (최대 120건)
     all_data = res.get_body().output2
-    
+
     # 최신 데이터가 앞에 있으므로 차트 표시를 위해 뒤집음
     all_data.reverse()
 
@@ -47,11 +48,11 @@ async def get_stock_chart(iscd: str, count: int = 120):
         # KIS date: YYYYMMDD, time: HHMMSS
         date_str = str(c["stck_bsop_date"])
         time_str = str(c["stck_cntg_hour"]).zfill(6)
-        
+
         try:
             dt = datetime.strptime(f"{date_str}{time_str}", "%Y%m%d%H%M%S")
             timestamp = int(dt.timestamp())
-            
+
             formatted_data.append({
                 "time": timestamp,
                 "open": float(c["stck_oprc"]),

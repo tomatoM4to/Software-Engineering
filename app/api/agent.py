@@ -77,8 +77,12 @@ async def analyze_auto(
         agent_request = await agent_data_orchestrator.build_request(
             stock_code=request.stock_code,
             stock_name=request.stock_name,
-            analysis_mode=request.analysis_mode,
+            market_div=request.market,
+            ai_persona=request.ai_persona,
             minute_limit=request.minute_limit,
+            anchor_ma=request.anchor_ma,
+            target_mas=request.target_mas,
+            convergence_threshold=request.convergence_threshold,
         )
     except ValueError as exc:
         raise HTTPException(

@@ -69,14 +69,20 @@ class AgentDataOrchestrator:
         stock_code: str,
         stock_name: str | None = None,
         market_div: str = "J",
-        analysis_mode: str = "swing_short",
+        ai_persona: str = "swing_short",
         minute_limit: int = 60,
+        anchor_ma: int = 20,
+        target_mas: list[int] | None = None,
+        convergence_threshold: float = 1.5,
         override_news: AgentNewsContext | None = None,
     ) -> AgentAnalysisRequest:
         """
         Raises:
             ValueError: 분봉 데이터를 가져올 수 없을 때
         """
+        if target_mas is None:
+            target_mas = [5, 10]
+
         # 1. 분봉 fetch (scanner.fetch_ohlcv_df 재사용)
         df = await fetch_ohlcv_df(stock_code, market_div=market_div)
         if df.empty:
@@ -85,8 +91,13 @@ class AgentDataOrchestrator:
                 "stock_code 가 올바른지, KIS 인증이 정상인지 확인하세요."
             )
 
-        # 2. 돌파 지표 계산 (breakout 패턴)
-        breakout_result = calculate_breakout(df, BreakoutRequest())
+        # 2. 돌파 지표 계산 (breakout 패턴 - 다이내믹 파라미터 적용)
+        breakout_params = BreakoutRequest(
+            anchor_ma=anchor_ma,
+            target_mas=target_mas,
+            convergence_threshold=convergence_threshold,
+        )
+        breakout_result = calculate_breakout(df, breakout_params)
 
         # 3. 지표 계산
         latest = df.iloc[-1]
@@ -98,6 +109,7 @@ class AgentDataOrchestrator:
                 float(series.rolling(window, min_periods=1).mean().iloc[-1]), 2
             )
 
+        # 고정 지표 (하단 DailyIndicators 유지용)
         ma5 = _flt(df["Close"], 5)
         ma20 = _flt(df["Close"], 20)
         ma60 = _flt(df["Close"], 60)
@@ -151,8 +163,11 @@ class AgentDataOrchestrator:
             trend_direction=trend,
         )
 
-        ma15 = _flt(df["Close"], 15)
-        ma30 = _flt(df["Close"], 30)
+        # 분봉 지표 (anchor_ma 반영)
+        ma_anchor_val = _flt(df["Close"], anchor_ma)
+        # 타겟 중 가장 짧은 것 하나 추출 (ma15 대용)
+        ma_target_val = _flt(df["Close"], target_mas[0])
+
         volume_spike = bool(latest_volume > vol_ma20 * 1.5) if vol_ma20 > 0 else None
         is_minute_breakout = breakout_result["breakout_category"] in (
             "BREAKOUT_STRONG",
@@ -164,8 +179,8 @@ class AgentDataOrchestrator:
             data_source="realtime",
             latest_price=latest_close,
             latest_volume=latest_volume,
-            ma15=ma15,
-            ma30=ma30,
+            ma15=ma_target_val,  # 다이내믹 타겟 반영
+            ma30=ma_anchor_val,  # 다이내믹 앵커 반영
             is_minute_breakout=is_minute_breakout,
             minute_breakout_level=high_20d,
             volume_spike=volume_spike,
@@ -182,11 +197,11 @@ class AgentDataOrchestrator:
         )
 
         logger.info(
-            "[Orchestrator] %s | 거래일:%s | 분봉:%s | 뉴스:%s",
+            "[Orchestrator] %s | 거래일:%s | 앵커:%d | 타겟:%s",
             stock_code,
             trade_date,
-            minute.data_source,
-            f"{len(news.news_items)}건" if news else "없음",
+            anchor_ma,
+            target_mas,
         )
 
         return AgentAnalysisRequest(
@@ -196,7 +211,9 @@ class AgentDataOrchestrator:
             daily_indicators=daily,
             minute_indicators=minute,
             news_context=news,
-            analysis_mode=analysis_mode,
+            anchor_ma=anchor_ma,
+            target_mas=target_mas,
+            ai_persona=ai_persona,
         )
 
 

@@ -160,14 +160,18 @@ class AgentAnalysisRequest(BaseModel):
         description="뉴스 컨텍스트 (Issue #5 구현 전: None → 차트 단독 분석)",
     )
 
-    analysis_mode: str = Field(default="swing_short")
+    # [Issue #12] 전략 메타데이터 보존
+    anchor_ma: int = 20
+    target_mas: list[int] = Field(default_factory=lambda: [5, 10])
+
+    ai_persona: str = Field(default="swing_short")
     requested_at: datetime = Field(default_factory=datetime.now)
 
-    @field_validator("analysis_mode")
+    @field_validator("ai_persona")
     @classmethod
     def _validate_mode(cls, v: str) -> str:
         if v not in ("swing_short", "day_trade"):
-            raise ValueError("analysis_mode must be swing_short or day_trade")
+            raise ValueError("ai_persona must be swing_short or day_trade")
         return v
 
 
@@ -180,8 +184,16 @@ class AgentAutoRequest(BaseModel):
     """
 
     stock_code: str = Field(..., description="종목 코드 (예: '005930')")
-    stock_name: str | None = Field(None)
-    analysis_mode: str = Field(default="swing_short")
+    stock_name: str | None = Field(None, description="선택 사항: 뉴스 검색 정확도를 높이기 위한 종목명")
+    market: str = Field(default="J", description="시장 구분 (J: 코스피, Q: 코스닥)")
+    ai_persona: str = Field(default="swing_short")
+
+    # [Issue #12] 다이내믹 전략 파라미터 주입
+    anchor_ma: int = Field(default=20, description="기준 이평선 (Anchor)")
+    target_mas: list[int] = Field(
+        default_factory=lambda: [5, 10], description="수렴 확인용 타겟 이평선 리스트"
+    )
+    convergence_threshold: float = Field(default=1.5, description="수렴 판단 임계치 (%)")
 
     # 분봉 파라미터 (1분봉)
     minute_limit: int = Field(
@@ -191,11 +203,11 @@ class AgentAutoRequest(BaseModel):
         description="수집할 분봉 개수 (KIS 1회 30건 반환 → 자동 연속 호출)",
     )
 
-    @field_validator("analysis_mode")
+    @field_validator("ai_persona")
     @classmethod
     def _check_mode(cls, v: str) -> str:
         if v not in ("swing_short", "day_trade"):
-            raise ValueError("analysis_mode must be swing_short or day_trade")
+            raise ValueError("ai_persona must be swing_short or day_trade")
         return v
 
 
@@ -234,7 +246,7 @@ class AgentSignalResponse(BaseModel):
     stock_name: str | None = None
     market: str | None = None
 
-    analysis_mode: str
+    ai_persona: str
     trade_date: str = Field(..., description="분석 기준 거래일 (YYYYMMDD)")
 
     conservative_agent: AgentResponse
