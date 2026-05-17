@@ -181,3 +181,20 @@ Server 를 처음 실행시키면 Consumer 를 백그라운드에서 무한루�
 
 ## 시연
 ...
+
+## 예상 질문
+1. 트래픽 제어 아키텍처: 단일 병목점(Choke Point) 설계
+User 의 요청시 Future 를 생성, Queue 에 put 함, 해당 Future 에 await 키워드를 걸어 백그라운드에서 해당 Future 가 완료될 때 까지 기다리는 구조, 해당 Queue 는 한국 투자증권 API 일 경우에만 사용됨
+
+2. 블로킹 방지
+requests 를 메인으로 사용했지만 뉴스를 제외한 모든 요청이 `asyncio.to_thread()` 로 감싸서 실행했기에 블로킹 되지 않음, news 도 블로킹 되지 않음, FastAPI 의 설계상 일반 `def` 으로 함수를 선언하면 자동으로 비동기로 동작한다고 알고 있음
+
+3. 데이터 전처리 오케스트레이션 (LLM 할루시네이션 억제)
+Ai Agent 에게 Request 를 할땐, 바로 차트부터 주입하는게 아니라, Pandas 를 이용해 breakout 포인트를 계산후 해당 수치와 뉴스를 묶어 JSON 형태로 Request 함, LLM 의 수학적 한계 극복하기 위한 설계
+
+4. Agent 병렬 처리
+`await asyncio.gather(...)` 로 동시에 실행, 이후 두 결과를 받아, `_aggregate_signals()` 최종 시그널 도출
+
+5. 토큰 갱신의 Singleton 스케줄러 처리
+tasks/auth_scheduler.py를 보면 AuthScheduler가 threading.Lock()을 이용한 Singleton 패턴으로
+구현되어 있고, AsyncIOScheduler를 사용해 매일 밤 10시에 KIS 토큰을 백그라운드에서 갱신 (오후 10시)
