@@ -86,7 +86,7 @@ def calculate_breakout(df: pd.DataFrame, request) -> dict[str, Any]:
             / df[f"MA{request.anchor_ma}"]
         ) * 100
 
-    df["convergence_score"] = df[gap_columns].sum(axis=1)
+    df["convergence_score"] = df[gap_columns].mean(axis=1)
     is_recently_converged = (
         df["convergence_score"].rolling(window=request.convergence_window).min()
         < request.convergence_threshold
