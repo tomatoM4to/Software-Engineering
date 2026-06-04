@@ -60,11 +60,16 @@ app.include_router(agent_router, prefix="/api")
 app.include_router(stock_router, prefix="/api")
 
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "app": "Trading Server"
+    }
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
