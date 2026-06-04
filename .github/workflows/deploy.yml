@@ -92,3 +92,29 @@ jobs:
 
             # 미사용 이미지 정리
             sudo docker image prune -f
+
+  # 3단계: 배포 후 자동 헬스체크
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run Health Check
+        env:
+          DOMAIN: ${{ secrets.DOMAIN }}
+        run: |
+          # 배포 후 서비스가 안정화될 때까지 잠시 대기 (10초)
+          sleep 10
+          python scripts/health_check.py --domain $DOMAIN
