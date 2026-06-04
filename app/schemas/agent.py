@@ -184,7 +184,9 @@ class AgentAutoRequest(BaseModel):
     """
 
     stock_code: str = Field(..., description="종목 코드 (예: '005930')")
-    stock_name: str | None = Field(None, description="선택 사항: 뉴스 검색 정확도를 높이기 위한 종목명")
+    stock_name: str | None = Field(
+        None, description="선택 사항: 뉴스 검색 정확도를 높이기 위한 종목명"
+    )
     market: str = Field(default="J", description="시장 구분 (J: 코스피, Q: 코스닥)")
     ai_persona: str = Field(default="swing_short")
 
@@ -193,7 +195,9 @@ class AgentAutoRequest(BaseModel):
     target_mas: list[int] = Field(
         default_factory=lambda: [5, 10], description="수렴 확인용 타겟 이평선 리스트"
     )
-    convergence_threshold: float = Field(default=1.5, description="수렴 판단 임계치 (%)")
+    convergence_threshold: float = Field(
+        default=1.5, description="수렴 판단 임계치 (%)"
+    )
 
     # 분봉 파라미터 (1분봉)
     minute_limit: int = Field(

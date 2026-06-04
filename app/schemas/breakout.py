@@ -14,11 +14,11 @@ class BreakoutRequest(BaseModel):
     convergence_window: int = 20
 
     # 거래량 조건 완화 & 민감도 향상
-    volume_ma_window: int = 5          # 변경: 20 -> 5
-    volume_multiplier: float = 1.5      # 변경: 2.0 -> 1.5
-    strong_volume_multiplier: float = 2.0 # 변경: 3.0 -> 2.0
+    volume_ma_window: int = 5  # 변경: 20 -> 5
+    volume_multiplier: float = 1.5  # 변경: 2.0 -> 1.5
+    strong_volume_multiplier: float = 2.0  # 변경: 3.0 -> 2.0
 
     # 추세 필터 도입 (가짜 반등 방지)
-    trend_ma: int | None = 60           # 변경: 0 -> 60
+    trend_ma: int | None = 60  # 변경: 0 -> 60
 
     base_index: int = 0

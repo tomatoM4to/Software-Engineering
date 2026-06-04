@@ -81,17 +81,23 @@ jobs:
           envs: IMAGE_TAG,DOMAIN
           script: |
             cd ~/trading-app
-            # GHCR 로그인 (sudo 사용)
+            # GHCR 로그인
             echo "${{ secrets.CR_PAT }}" | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 환경 변수 설정 및 배포 (sudo -E 사용)
+            # 환경 변수 및 로그 최적화 설정
             export IMAGE_TAG=$IMAGE_TAG
             export DOMAIN=$DOMAIN
-            sudo -E docker compose pull
-            sudo -E docker compose up -d
+            export DOCKER_CLI_PROGRESS_TYPE=plain
+            
+            echo "--- Pulling images ---"
+            sudo -E docker compose pull 2>&1
+            
+            echo "--- Starting containers ---"
+            sudo -E docker compose up -d 2>&1
 
-            # 미사용 이미지 정리
-            sudo docker image prune -f
+            # 미사용 리소스 정리 (메모리/디스크 확보)
+            echo "--- Cleaning up ---"
+            sudo docker system prune -f
 
   # 3단계: 배포 후 자동 헬스체크
   health-check:

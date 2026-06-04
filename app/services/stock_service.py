@@ -5,6 +5,7 @@ from core.kis_fetch import async_url_fetch
 
 logger = logging.getLogger(__name__)
 
+
 async def get_stock_chart(iscd: str, count: int = 120):
     """
     주식일별분봉조회 API(FHKST03010230)를 사용하여 1분봉 데이터 120개를 한 번에 가져옵니다.
@@ -26,7 +27,7 @@ async def get_stock_chart(iscd: str, count: int = 120):
         "FID_INPUT_ISCD": iscd,
         "FID_INPUT_HOUR_1": current_time,
         "FID_INPUT_DATE_1": current_date,
-        "FID_PW_DATA_INCU_YN": "Y", # 과거 데이터 포함
+        "FID_PW_DATA_INCU_YN": "Y",  # 과거 데이터 포함
         "FID_FAKE_TICK_INCU_YN": "N",
     }
 
@@ -53,14 +54,16 @@ async def get_stock_chart(iscd: str, count: int = 120):
             dt = datetime.strptime(f"{date_str}{time_str}", "%Y%m%d%H%M%S")
             timestamp = int(dt.timestamp())
 
-            formatted_data.append({
-                "time": timestamp,
-                "open": float(c["stck_oprc"]),
-                "high": float(c["stck_hgpr"]),
-                "low": float(c["stck_lwpr"]),
-                "close": float(c["stck_prpr"]),
-                "volume": float(c["cntg_vol"]),
-            })
+            formatted_data.append(
+                {
+                    "time": timestamp,
+                    "open": float(c["stck_oprc"]),
+                    "high": float(c["stck_hgpr"]),
+                    "low": float(c["stck_lwpr"]),
+                    "close": float(c["stck_prpr"]),
+                    "volume": float(c["cntg_vol"]),
+                }
+            )
         except Exception as e:
             logger.warning(f"Failed to parse bar data: {e}")
             continue
