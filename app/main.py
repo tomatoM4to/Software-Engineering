@@ -1,5 +1,5 @@
 import logging
-import datetime
+from datetime import datetime
 from contextlib import asynccontextmanager
 
 from api.agent import router as agent_router
