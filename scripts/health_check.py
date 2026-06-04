@@ -55,13 +55,13 @@ def main():
     print(f"{BOLD}{'=' * 60}{RESET}")
 
     # 헬스체크 목록 정의
-    # 주식 분석 API는 좀 오래 걸릴 수 있으므로 timeout을 충분히 줌
+    # breakout API는 시장 데이터를 스캔하므로 timeout을 충분히(60초) 줌
     checks = [
-        ("1. 기본 서버 접속", f"{domain}/", 200, 10),
+        ("1. 서버 기본 상태 (Health)", f"{domain}/health", 200, 10),
         ("2. AI 에이전트 시스템", f"{domain}/api/agent/health", 200, 10),
         (
-            "3. 주식 분석 (실시간 시세/차트)",
-            f"{domain}/api/stock/chart/005930",
+            "3. 돌파 전략 스캐너 (Breakout)",
+            f"{domain}/api/strategy/breakout?market=Q&anchor_ma=20&target_mas=5&target_mas=10&convergence_threshold=1.5",
             200,
             60,
         ),
