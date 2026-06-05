@@ -10,6 +10,12 @@ ruff check . --fix
 ruff format .
 ```
 
+
+locust 실행
+```
+uv run locust -f tests/load_breakout.py
+```
+
 ***
 ***
 ***
