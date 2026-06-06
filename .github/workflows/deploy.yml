@@ -88,10 +88,10 @@ jobs:
             export IMAGE_TAG=$IMAGE_TAG
             export DOMAIN=$DOMAIN
             export DOCKER_CLI_PROGRESS_TYPE=plain
-            
+
             echo "--- Pulling images ---"
             sudo -E docker compose pull 2>&1
-            
+
             echo "--- Starting containers ---"
             sudo -E docker compose up -d 2>&1
 
@@ -121,6 +121,6 @@ jobs:
         env:
           DOMAIN: ${{ secrets.DOMAIN }}
         run: |
-          # 배포 후 서비스가 안정화될 때까지 잠시 대기 (10초)
-          sleep 10
+          # 배포 후 서비스가 안정화될 때까지 잠시 대기 (60초)
+          sleep 60
           python scripts/health_check.py --domain $DOMAIN
