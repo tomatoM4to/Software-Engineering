@@ -6,8 +6,8 @@ class BreakoutUser(HttpUser):
     돌파 전략 스캐너 부하 테스트
     동시 10건 정도 호출 시의 성능 확인
     """
-    host = "https://168.107.30.239.nip.io"
-    
+    host = "http://localhost:8000/"
+
     wait_time = between(1, 5)
 
     @task
