@@ -4,86 +4,89 @@ from collections import namedtuple
 
 import requests
 from core import kis_auth as ka
+from core.kis_cache import kis_cache
 from schemas.core import KisTrId
 
 logger = logging.getLogger(__name__)
 
 
 class APIResp:
-    def __init__(self, resp: requests.Response):
-        self._resp = resp
-        self._rescode = resp.status_code
-        self._is_success = self._rescode == 200
+    """
+    한국투자증권(KIS) API의 응답을 표준화하여 처리하는 클래스 (Slim Version).
+    성공 여부 판단과 바디 데이터 접근(namedtuple) 기능에 집중합니다.
+    """
 
-        if self._is_success:
-            # 헤더 파싱 (소문자 키만 추출)
-            fld = {k: v for k, v in resp.headers.items() if k.islower()}
-            self._header = namedtuple("header", fld.keys())(**fld)
+    def __init__(self, resp: requests.Response | None = None, data: dict | None = None):
+        """
+        APIResp 인스턴스를 초기화합니다.
 
-            # 바디 파싱
-            body_data = resp.json()
-            self._body = namedtuple("body", body_data.keys())(**body_data)
+        Args:
+            resp (requests.Response, optional): 실제 네트워크 통신을 통해 받은 응답 객체.
+            data (dict, optional): 캐시 시스템으로부터 받은 응답 데이터 딕셔너리.
+        """
+        self._is_success = False
+        self._body_dict = {}
+        self._err_msg = ""
 
-            self._err_code = getattr(self._body, "msg_cd", "")
-            self._err_message = getattr(self._body, "msg1", "")
+        if resp is not None:
+            self._rescode = resp.status_code
+            self._is_success = self._rescode == 200
+            if self._is_success:
+                try:
+                    self._body_dict = resp.json()
+                    self._err_msg = self._body_dict.get("msg1", "")
+                except Exception:
+                    self._is_success = False
+                    self._err_msg = "Failed to parse JSON response"
+            else:
+                self._err_msg = resp.text
+        elif data is not None:
+            self._rescode = 200
+            self._is_success = True
+            self._body_dict = data
+            self._err_msg = data.get("msg1", "Success")
         else:
-            # HTTP 에러 발생 시 더미 객체 할당 (AttributeError 방지)
-            class EmptyNode:
-                def __getattr__(self, name):
-                    return ""
+            self._rescode = 500
+            self._is_success = False
+            self._err_msg = "No response or data provided"
 
-            self._header = EmptyNode()
-            self._body = EmptyNode()
-            self._err_code = str(self._rescode)
-            self._err_message = resp.text
+        # namedtuple로 변환 (기존 .get_body().field 접근 호환성 유지)
+        if self._body_dict:
+            self._body = namedtuple("body", self._body_dict.keys())(**self._body_dict)
+        else:
+            self._body = self._set_empty()
 
-    def get_res_code(self):
-        return self._rescode
+    def _set_empty(self):
+        """필드 접근 시 AttributeError 방지를 위한 빈 객체 반환"""
 
-    def get_header(self):
-        return self._header
+        class Empty:
+            def __getattr__(self, name):
+                return ""
+
+        return Empty()
+
+    @staticmethod
+    def from_cache(data: dict):
+        """캐시 데이터로부터 APIResp 객체를 생성합니다."""
+        return APIResp(data=data)
 
     def get_body(self):
+        """namedtuple로 변환된 응답 바디 객체를 반환합니다."""
         return self._body
 
-    def get_response(self):
-        return self._resp
-
     def is_ok(self):
+        """성공 여부(HTTP 200 및 rt_cd '0')를 반환합니다."""
         if not self._is_success:
             return False
-        return getattr(self._body, "rt_cd", "") == "0"
-
-    def get_error_code(self):
-        return self._err_code
+        return str(self._body_dict.get("rt_cd", "0")) == "0"
 
     def get_error_message(self):
-        return self._err_message
+        """에러 메시지(msg1 또는 HTTP 응답 텍스트)를 반환합니다."""
+        return self._err_msg
 
     def print_all(self):
-        if not self._is_success:
-            logger.error("=== ERROR RESPONSE ===")
-            logger.error(
-                "Status Code: %s | Message: %s", self._rescode, self._err_message
-            )
-            return
-
-        logger.debug("<Header>")
-        for x in self._header._fields:
-            logger.debug("\t-%s: %s", x, getattr(self._header, x))
-        logger.debug("<Body>")
-        for x in self._body._fields:
-            logger.debug("\t-%s: %s", x, getattr(self._body, x))
-
-    def print_error(self, url: str = ""):
-        logger.error(
-            "Error Code: %s | rt_cd: %s | msg_cd: %s | msg1: %s | URL: %s",
-            self._rescode,
-            getattr(self._body, "rt_cd", "N/A"),
-            self._err_code,
-            self._err_message,
-            url,
-        )
+        """디버깅을 위해 응답 바디를 로그에 출력합니다."""
+        logger.debug(f"<APIResp Body> {self._body_dict}")
 
 
 # -------------------------------------------------------------------------
@@ -175,7 +178,7 @@ def _do_sync_fetch(
     else:
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
-    ar = APIResp(res)
+    ar = APIResp(resp=res)
 
     if not ar.is_ok():
         logger.error("Error Code : %s | %s", res.status_code, res.text)
@@ -183,6 +186,26 @@ def _do_sync_fetch(
         ar.print_all()
 
     return ar
+
+
+async def async_cache_fetch(
+    ptr_id: str | KisTrId,
+    params: dict,
+) -> APIResp:
+    """
+    [사용자 전용 Fast Path]
+    큐를 전혀 타지 않고 오직 캐시만 확인
+    """
+    tr_id = ptr_id.value if isinstance(ptr_id, KisTrId) else ptr_id
+
+    cached_data = await kis_cache.get_from_cache(tr_id, params)
+    if cached_data:
+        return APIResp.from_cache(cached_data)
+
+    # 캐시에 데이터가 없으면 즉시 에러 반환 (대기 없음)
+    return APIResp(
+        data={"rt_cd": "7", "msg_cd": "CACHE_MISS", "msg1": "No cached data available"}
+    )
 
 
 async def async_url_fetch(
@@ -194,6 +217,7 @@ async def async_url_fetch(
     post_flag: bool = False,
     hash_flag: bool = True,
     priority: int = 5,
+    bypass_cache: bool = False,
 ) -> APIResp:
     """
     라우터/서비스 계층에서 호출할 비동기(async) API.

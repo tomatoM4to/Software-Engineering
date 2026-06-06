@@ -1,10 +1,14 @@
 # app/services/ranking_list.py
-from core.kis_fetch import async_url_fetch
+from core.kis_fetch import async_cache_fetch, async_url_fetch
 from schemas.core import KisTrId
 
 
 async def get_volume_rank(
-    market_div: str = "J", target_div: str = "0", exclude_div: str = "1111111111"
+    market_div: str = "J",
+    target_div: str = "0",
+    exclude_div: str = "1111111111",
+    bypass_cache: bool = False,
+    priority: int = 5,
 ):
     """거래량 순위 조회 서비스"""
     api_url = "/uapi/domestic-stock/v1/quotations/volume-rank"
@@ -36,6 +40,15 @@ async def get_volume_rank(
         "FID_INPUT_DATE_1": "",
     }
 
+    if not bypass_cache:
+        # 유저 요청: 큐를 타지 않는 캐시 전용 호출
+        return await async_cache_fetch(ptr_id=KisTrId.VOLUME_RANK, params=params)
+
     return await async_url_fetch(
-        api_url=api_url, ptr_id=KisTrId.VOLUME_RANK, tr_cont="", params=params
+        api_url=api_url,
+        ptr_id=KisTrId.VOLUME_RANK,
+        tr_cont="",
+        params=params,
+        bypass_cache=bypass_cache,
+        priority=priority,
     )
