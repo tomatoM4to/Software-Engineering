@@ -1,11 +1,14 @@
 import random
-from locust import HttpUser, task, between
+
+from locust import HttpUser, between, task
+
 
 class BreakoutUser(HttpUser):
     """
     돌파 전략 스캐너 부하 테스트
     동시 10건 정도 호출 시의 성능 확인
     """
+
     host = "https://168.107.30.239.nip.io/"
 
     wait_time = between(1, 5)
@@ -18,7 +21,9 @@ class BreakoutUser(HttpUser):
             "market": market,
             "anchor_ma": 20,
             "target_mas": [5, 10],
-            "convergence_threshold": 1.5
+            "convergence_threshold": 1.5,
         }
         # name 파라미터를 사용하여 통계에서 쿼리 스트링 제외하고 그룹화
-        self.client.get("/api/strategy/breakout", params=params, name="/api/strategy/breakout")
+        self.client.get(
+            "/api/strategy/breakout", params=params, name="/api/strategy/breakout"
+        )

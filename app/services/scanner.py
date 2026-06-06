@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from core.kis_fetch import async_url_fetch, async_cache_fetch
+from core.kis_fetch import async_cache_fetch, async_url_fetch
 from services.breakout import calculate_breakout, prepare_ohlcv_df
 from services.ranking_list import get_volume_rank
 
@@ -33,7 +33,13 @@ def get_prev_minute(date_str: str, time_str: str) -> tuple[str, str]:
     return prev_dt.strftime("%Y%m%d"), prev_dt.strftime("%H%M%S")
 
 
-async def fetch_chart_data(iscd: str, end_time: str = "", market_div: str = "J", bypass_cache: bool = False, priority: int = 5):
+async def fetch_chart_data(
+    iscd: str,
+    end_time: str = "",
+    market_div: str = "J",
+    bypass_cache: bool = False,
+    priority: int = 5,
+):
     """
     특정 종목의 1분봉 데이터를 가져옵니다 (최대 120건, 캐시 시 240건).
     """
@@ -52,26 +58,37 @@ async def fetch_chart_data(iscd: str, end_time: str = "", market_div: str = "J",
             return res.get_body().output2
         return []
 
-    res = await async_url_fetch(api_url, "FHKST03010200", "", params, bypass_cache=bypass_cache, priority=priority)
+    res = await async_url_fetch(
+        api_url,
+        "FHKST03010200",
+        "",
+        params,
+        bypass_cache=bypass_cache,
+        priority=priority,
+    )
 
     if res.is_ok():
         return res.get_body().output2
     return []
 
 
-async def fetch_ohlcv_df(iscd: str, market_div: str = "J", bypass_cache: bool = False, priority: int = 5):
+async def fetch_ohlcv_df(
+    iscd: str, market_div: str = "J", bypass_cache: bool = False, priority: int = 5
+):
     """
     1분봉 데이터(약 240분)를 가져와 OHLCV DataFrame으로 반환.
     캐시 적중 시 1회, 미적중 시 2회 페칭합니다.
     """
     # 1회차 페칭 (최신 데이터)
-    batch1 = await fetch_chart_data(iscd, market_div=market_div, bypass_cache=bypass_cache, priority=priority)
+    batch1 = await fetch_chart_data(
+        iscd, market_div=market_div, bypass_cache=bypass_cache, priority=priority
+    )
     if not batch1:
         return prepare_ohlcv_df([])
 
     # 캐시에서 가져온 경우 이미 240분 분량이 합쳐져 있음 (len > 120)
     if len(batch1) > 120:
-        combined = batch1[::-1] # 전체 데이터를 시간 정순(과거->현재)으로 뒤집음
+        combined = batch1[::-1]  # 전체 데이터를 시간 정순(과거->현재)으로 뒤집음
     else:
         # 실시간 데이터인 경우(120개) 1회 더 페칭하여 연속성 확보
         oldest = batch1[-1]
@@ -79,7 +96,13 @@ async def fetch_ohlcv_df(iscd: str, market_div: str = "J", bypass_cache: bool = 
             str(oldest["stck_bsop_date"]),
             str(oldest["stck_cntg_hour"]).zfill(6),
         )
-        batch2 = await fetch_chart_data(iscd, end_time=prev_time, market_div=market_div, bypass_cache=bypass_cache, priority=priority)
+        batch2 = await fetch_chart_data(
+            iscd,
+            end_time=prev_time,
+            market_div=market_div,
+            bypass_cache=bypass_cache,
+            priority=priority,
+        )
         # 과거(batch2) + 최신(batch1) 순으로 합친 후 뒤집음
         combined = batch2[::-1] + batch1[::-1]
 

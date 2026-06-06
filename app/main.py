@@ -1,12 +1,8 @@
 import asyncio
 import logging
 import sys
-from datetime import datetime
 from contextlib import asynccontextmanager
-
-from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
 
 from api.agent import router as agent_router
 from api.news import router as news_router
@@ -17,6 +13,9 @@ from core.config import settings
 from core.kis_auth import auth, get_kis_env
 from core.kis_fetch import start_kis_worker
 from core.logging import setup_logging
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from tasks.auth_scheduler import AuthScheduler
 from tasks.cache_scheduler import CacheScheduler
 
@@ -37,9 +36,11 @@ async def lifespan(app: FastAPI):
 
         # 인증 실패 시 서버 기동 중단
         if get_kis_env() is None:
-            logger.critical("KIS Authentication failed: Environment configuration is missing.")
+            logger.critical(
+                "KIS Authentication failed: Environment configuration is missing."
+            )
             sys.exit(1)
-        
+
         logger.info("KIS Authentication initialized successfully.")
     except Exception as e:
         logger.critical(f"Critical error during KIS Authentication: {e}")
@@ -47,7 +48,7 @@ async def lifespan(app: FastAPI):
 
     # 2. KIS API 워커 및 스케줄러 초기화
     await start_kis_worker()
-    
+
     cache_scheduler = CacheScheduler()
     cache_scheduler.start()
 
@@ -101,7 +102,7 @@ def health_check():
     return {
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
-        "app": "Trading Server"
+        "app": "Trading Server",
     }
 
 

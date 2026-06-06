@@ -1,12 +1,11 @@
 import asyncio
 import logging
 from collections import namedtuple
-from typing import Optional, Any
 
 import requests
 from core import kis_auth as ka
-from schemas.core import KisTrId
 from core.kis_cache import kis_cache
+from schemas.core import KisTrId
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +16,10 @@ class APIResp:
     성공 여부 판단과 바디 데이터 접근(namedtuple) 기능에 집중합니다.
     """
 
-    def __init__(self, resp: Optional[requests.Response] = None, data: Optional[dict] = None):
+    def __init__(self, resp: requests.Response | None = None, data: dict | None = None):
         """
         APIResp 인스턴스를 초기화합니다.
-        
+
         Args:
             resp (requests.Response, optional): 실제 네트워크 통신을 통해 받은 응답 객체.
             data (dict, optional): 캐시 시스템으로부터 받은 응답 데이터 딕셔너리.
@@ -31,7 +30,7 @@ class APIResp:
 
         if resp is not None:
             self._rescode = resp.status_code
-            self._is_success = (self._rescode == 200)
+            self._is_success = self._rescode == 200
             if self._is_success:
                 try:
                     self._body_dict = resp.json()
@@ -59,8 +58,11 @@ class APIResp:
 
     def _set_empty(self):
         """필드 접근 시 AttributeError 방지를 위한 빈 객체 반환"""
+
         class Empty:
-            def __getattr__(self, name): return ""
+            def __getattr__(self, name):
+                return ""
+
         return Empty()
 
     @staticmethod
@@ -85,7 +87,6 @@ class APIResp:
     def print_all(self):
         """디버깅을 위해 응답 바디를 로그에 출력합니다."""
         logger.debug(f"<APIResp Body> {self._body_dict}")
-
 
 
 # -------------------------------------------------------------------------
@@ -196,13 +197,15 @@ async def async_cache_fetch(
     큐를 전혀 타지 않고 오직 캐시만 확인
     """
     tr_id = ptr_id.value if isinstance(ptr_id, KisTrId) else ptr_id
-    
+
     cached_data = await kis_cache.get_from_cache(tr_id, params)
     if cached_data:
         return APIResp.from_cache(cached_data)
 
     # 캐시에 데이터가 없으면 즉시 에러 반환 (대기 없음)
-    return APIResp(data={"rt_cd": "7", "msg_cd": "CACHE_MISS", "msg1": "No cached data available"})
+    return APIResp(
+        data={"rt_cd": "7", "msg_cd": "CACHE_MISS", "msg1": "No cached data available"}
+    )
 
 
 async def async_url_fetch(
@@ -242,4 +245,3 @@ async def async_url_fetch(
 
     # 응답이 도착할 때까지 비동기 대기
     return await future
-

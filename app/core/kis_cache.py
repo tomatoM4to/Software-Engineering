@@ -11,18 +11,18 @@ class KISCache:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(KISCache, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
         if self._initialized:
             return
-        
+
         # 데이터 저장소
         # rankings: { "J": [stock_list], "Q": [stock_list] }
         self._rankings: dict[str, list[dict]] = {"J": [], "Q": []}
-        
+
         # minute_bars: { "005930": { "output2": [...], "timestamp": datetime } }
         self._minute_bars: dict[str, dict[str, Any]] = {}
 
@@ -31,7 +31,7 @@ class KISCache:
             "FHPST01710000": self._handle_volume_rank,
             "FHKST03010200": self._handle_minute_bars,
         }
-        
+
         self._initialized = True
         logger.info("[KISCache] Initialized Singleton Instance.")
 
@@ -47,14 +47,10 @@ class KISCache:
             result = await handler(params)
             if result:
                 # API 응답 표준 포맷 구성
-                response_data = {
-                    "rt_cd": "0", 
-                    "msg_cd": "CACHE", 
-                    "msg1": "Success"
-                }
+                response_data = {"rt_cd": "0", "msg_cd": "CACHE", "msg1": "Success"}
                 response_data.update(result)
                 return response_data
-        
+
         return None
 
     async def _handle_volume_rank(self, params: dict) -> dict | None:
@@ -80,7 +76,9 @@ class KISCache:
     async def update_ranking(self, market: str, data: list[dict]):
         async with self._lock:
             self._rankings[market] = data
-            logger.debug(f"[KISCache] Updated ranking for {market} (count: {len(data)})")
+            logger.debug(
+                f"[KISCache] Updated ranking for {market} (count: {len(data)})"
+            )
 
     async def get_ranking(self, market: str) -> list[dict]:
         async with self._lock:
@@ -100,6 +98,7 @@ class KISCache:
         self._rankings = {"J": [], "Q": []}
         self._minute_bars = {}
         logger.info("[KISCache] Cache cleared.")
+
 
 # 전역 인스턴스
 kis_cache = KISCache()
