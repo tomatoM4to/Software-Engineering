@@ -1,0 +1,82 @@
+name: Locust Load Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: '테스트할 시나리오 선택'
+        required: true
+        default: 'agent'
+        type: choice
+        options:
+          - agent
+          - breakout
+      users:
+        description: '동시 사용자 수 (Number of concurrent users)'
+        required: true
+        default: '10'
+      spawn_rate:
+        description: '초당 사용자 생성 수 (The rate per second in which users are spawned)'
+        required: true
+        default: '2'
+      run_time:
+        description: '테스트 실행 시간 (예: 1m, 10m, 1h)'
+        required: true
+        default: '1m'
+      target_host:
+        description: '테스트 대상 호스트 (입력하지 않으면 스크립트 기본값 사용)'
+        required: false
+        default: 'https://168.107.30.239.nip.io'
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Locust
+        run: |
+          # 테스트 파일 경로 설정
+          LOCUST_FILE="tests/locust_${{ github.event.inputs.test_type }}.py"
+
+          echo "Running Locust with file: $LOCUST_FILE"
+
+          # locust 실행 (headless 모드, CSV 출력 추가)
+          uv run locust -f $LOCUST_FILE \
+            --headless \
+            -u ${{ github.event.inputs.users }} \
+            -r ${{ github.event.inputs.spawn_rate }} \
+            -t ${{ github.event.inputs.run_time }} \
+            --host ${{ github.event.inputs.target_host }} \
+            --csv locust_report \
+            --html locust_report.html \
+            --only-summary
+
+      - name: Generate Visual Summary
+        if: always()
+        run: |
+          uv run --with pandas python scripts/locust_summary.py
+
+      - name: Upload Load Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: locust-report-${{ github.event.inputs.test_type }}-${{ github.run_id }}
+          path: |
+            locust_report.html
+            locust_report_*.csv
+          retention-days: 30

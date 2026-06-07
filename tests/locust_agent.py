@@ -5,7 +5,7 @@ from locust import HttpUser, between, task
 
 class AnalyzeUser(HttpUser):
     """
-    AI 분석 API 부하 테스트 (비용 고려하여 최대 동시 10건 제한 권장)
+    AI 분석 API 부하 테스트 (비용 고려하여 최대 동시 5건 제한 권장)
     """
 
     host = "https://168.107.30.239.nip.io"
