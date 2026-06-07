@@ -10,6 +10,7 @@ on:
       - 'tests/**'
       - 'scripts/**'
       - 'pyproject.toml'
+      - '.github/workflows/ruff.yml'
 
 jobs:
   ruff-fix:
@@ -20,9 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # PR의 소스 브랜치(head_ref)를 체크아웃
           ref: ${{ github.head_ref }}
-          # deploy.yml에서 사용하는 CR_PAT을 사용하여 푸시 권한 확보 및 워크플로우 재트리거 허용
           token: ${{ secrets.CR_PAT }}
 
       - name: Ruff Fix
