@@ -5,6 +5,12 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'app/**'
+      - 'kis-code-assistant-mcp/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
 
 jobs:
   ruff-check:
