@@ -42,11 +42,11 @@ class KISCache:
     async def get_from_cache(self, tr_id: str, params: dict) -> dict | None:
         """
         TR_ID와 파라미터를 기반으로 캐시된 데이터를 조회합니다.
-        
+
         Args:
             tr_id (str): KIS Transaction ID
             params (dict): API 요청 파라미터
-            
+
         Returns:
             dict | None: 캐시된 응답 데이터 또는 None
         """
@@ -93,7 +93,7 @@ class KISCache:
     async def update_ranking(self, market: str, data: list[dict]):
         """
         시장별 거래량 순위 데이터를 갱신합니다.
-        
+
         Args:
             market (str): 'J' (KOSPI) 또는 'Q' (KOSDAQ)
             data (list[dict]): 갱신할 종목 리스트
@@ -112,7 +112,7 @@ class KISCache:
     async def update_minute_bars(self, stock_code: str, data: list[dict]):
         """
         특정 종목의 분봉 데이터를 갱신합니다.
-        
+
         Args:
             stock_code (str): 종목코드
             data (list[dict]): 갱신할 분봉 데이터 리스트
