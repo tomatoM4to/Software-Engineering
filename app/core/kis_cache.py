@@ -10,6 +10,7 @@ class KISCache:
     한국투자증권(KIS) API 응답 데이터를 메모리에 캐싱하는 싱글톤 클래스.
     거래량 순위(rankings)와 종목별 분봉 데이터(minute_bars)를 관리합니다.
     """
+
     _instance = None
     _lock = asyncio.Lock()
 
