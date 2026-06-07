@@ -23,19 +23,19 @@ def generate_summary():
     if len(df) > 60:
         df = df.iloc[::len(df)//60]
 
-    # 1. Mermaid 차트 생성 (RPS 및 Response Time)
-    mermaid_line = "```mermaid\nxychart-beta\n    title \"Load Test: RPS (Line 1) & P95 Latency (Line 2)\"\n"
+    # 1. Mermaid 차트 생성 (Response Time: P50 및 P95)
+    mermaid_line = "```mermaid\nxychart-beta\n    title \"Load Test: Response Time (P50 & P95 ms)\"\n"
     
     # X축 설정 (시간)
     x_axis = "    x-axis [" + ", ".join([f"\"{int(t)}s\"" for t in df['RelativeTime']]) + "]\n"
     mermaid_line += x_axis
     
-    # Y축 설정 (공통)
-    mermaid_line += "    y-axis \"Value\"\n"
+    # Y축 설정 (Latency ms)
+    mermaid_line += "    y-axis \"Latency (ms)\"\n"
 
-    # RPS 데이터
-    rps_data = "    line [" + ", ".join([f"{r:.1f}" for r in df['Requests/s']]) + "]\n"
-    mermaid_line += rps_data
+    # 50% 응답시간 데이터 (ms)
+    p50_data = "    line [" + ", ".join([f"{p:.0f}" for p in df['50%']]) + "]\n"
+    mermaid_line += p50_data
     
     # 95% 응답시간 데이터 (ms)
     p95_data = "    line [" + ", ".join([f"{p:.0f}" for p in df['95%']]) + "]\n"
@@ -48,6 +48,7 @@ def generate_summary():
     summary_stats += "| --- | --- |\n"
     summary_stats += f"| **Total Users** | {df['User Count'].max()} |\n"
     summary_stats += f"| **Max RPS** | {df['Requests/s'].max():.1f} |\n"
+    summary_stats += f"| **Avg P50 Latency** | {df['50%'].mean():.1f} ms |\n"
     summary_stats += f"| **Avg P95 Latency** | {df['95%'].mean():.1f} ms |\n"
     summary_stats += "\n"
 
