@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from services.scanner import fetch_ohlcv_df
 
