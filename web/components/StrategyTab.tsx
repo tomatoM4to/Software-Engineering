@@ -173,7 +173,7 @@ export function StrategyTab({
                   <TableBody>
                     {results["strategy_breakout"].results?.length > 0 ? (
                       results["strategy_breakout"].results
-                        .slice(0, 20)
+                        .slice(0, 30)
                         .map((item: any, i: number) => (
                           <TableRow
                             key={i}

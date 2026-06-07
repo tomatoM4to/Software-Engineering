@@ -125,17 +125,35 @@ async def fetch_and_analyze_stock(
 ):
     """
     종목별 1분봉 데이터를 2회 페칭(240분)하여 breakout 분석을 수행합니다.
+    데이터가 없거나 에러가 발생해도 'NONE' 카테고리로 반환하여 리스트에 포함되게 합니다 (데모용).
     """
     try:
         df = await fetch_ohlcv_df(iscd, market_div)
         if df.empty:
-            return None
+            return {
+                "code": iscd,
+                "name": name,
+                "breakout_category": "NONE",
+                "signal_date": "-",
+                "close": 0.0,
+                "volume": 0,
+                "convergence_score": None,
+            }
+
         result = calculate_breakout(df, request_params)
         result.update({"code": iscd, "name": name})
         return result
     except Exception as e:
         logger.error(f"Error analyzing {iscd} ({name}): {e}")
-        return None
+        return {
+            "code": iscd,
+            "name": name,
+            "breakout_category": "NONE",
+            "signal_date": "Error",
+            "close": 0.0,
+            "volume": 0,
+            "convergence_score": None,
+        }
 
 
 async def get_breakout_rankings(market: str, breakout_request):
