@@ -87,8 +87,11 @@ def calculate_breakout(df: pd.DataFrame, request) -> dict[str, Any]:
         ) * 100
 
     df["convergence_score"] = df[gap_columns].mean(axis=1)
+
+    # 제안하신 로직: 최근 N분간의 '평균' 수렴 점수가 Threshold 이하인지 확인
+    # 이는 일시적인 수렴이 아닌, 지속적인 에너지 응축(횡보)을 포착하기 위함입니다.
     is_recently_converged = (
-        df["convergence_score"].rolling(window=request.convergence_window).min()
+        df["convergence_score"].rolling(window=request.convergence_window).mean()
         < request.convergence_threshold
     )
 
