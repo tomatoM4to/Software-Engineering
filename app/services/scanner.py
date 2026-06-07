@@ -169,11 +169,9 @@ async def get_breakout_rankings(market: str, breakout_request):
     stocks = rank_res.get_body().output[:30]
 
     # 2. 병렬 분석 태스크 생성
-    # inquire-time-itemchartprice의 FID_COND_MRKT_DIV_CODE는 상장시장 구분과 다를 수 있으나
-    # 국내주식의 경우 보통 'J'를 사용합니다.
     tasks = [
         fetch_and_analyze_stock(
-            s["mksc_shrn_iscd"], s["hts_kor_isnm"], "J", breakout_request
+            s["mksc_shrn_iscd"], s["hts_kor_isnm"], market, breakout_request
         )
         for s in stocks
     ]

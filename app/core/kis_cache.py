@@ -56,7 +56,14 @@ class KISCache:
     async def _handle_volume_rank(self, params: dict) -> dict | None:
         """거래량 순위 캐시 핸들러"""
         input_iscd = params.get("FID_INPUT_ISCD", "")
-        market = "J" if input_iscd == "0001" else "Q"
+        # 0001: 코스피, 1001: 코스닥
+        if input_iscd == "0001":
+            market = "J"
+        elif input_iscd == "1001":
+            market = "Q"
+        else:
+            market = "J" # 기본값
+
         data = self._rankings.get(market, [])
         if data:
             return {"output": data}
