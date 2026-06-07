@@ -16,7 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface RankingTabProps {
   loading: Record<string, boolean>;
@@ -25,6 +33,8 @@ interface RankingTabProps {
 }
 
 export function RankingTab({ loading, results, callApi }: RankingTabProps) {
+  const [market, setMarket] = useState("kospi");
+
   return (
     <div className="pt-4">
       <Card>
@@ -33,15 +43,29 @@ export function RankingTab({ loading, results, callApi }: RankingTabProps) {
           <CardDescription>Get top stocks by trading volume.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            onClick={() => callApi("ranking_volume", "/api/ranking/volume")}
-            disabled={loading["ranking_volume"]}
-          >
-            {loading["ranking_volume"] && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Fetch Volume Ranking
-          </Button>
+          <div className="flex items-center gap-4">
+            <Select value={market} onValueChange={setMarket}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Market" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kospi">KOSPI</SelectItem>
+                <SelectItem value="kosdaq">KOSDAQ</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={() =>
+                callApi("ranking_volume", `/api/ranking/volume?market=${market}`)
+              }
+              disabled={loading["ranking_volume"]}
+            >
+              {loading["ranking_volume"] && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Fetch Volume Ranking
+            </Button>
+          </div>
 
           {results["ranking_volume"] && (
             <div className="rounded-md border overflow-hidden">
