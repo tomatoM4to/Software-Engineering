@@ -1,6 +1,5 @@
-name: Ruff Linter
+name: Ruff Bot (Auto Fix & Format)
 
-# main 브랜치로 향하는 PR이 생성되거나 업데이트될 때 트리거
 on:
   pull_request:
     branches:
@@ -11,21 +10,34 @@ on:
       - 'tests/**'
       - 'scripts/**'
       - 'pyproject.toml'
+      - '.github/workflows/ruff.yml'
 
 jobs:
-  ruff-check:
+  ruff-fix:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: 저장소 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.CR_PAT }}
 
-      - name: Ruff Linter
+      - name: Ruff Fix
         uses: astral-sh/ruff-action@v3
         with:
-          # --output-format=github 옵션을 주면 에러가 PR 코드 리뷰 라인에 직접 표시
-          args: "check --output-format=github ."
+          args: "check --fix ."
 
-      - name: Ruff Formatter
+      - name: Ruff Format
         uses: astral-sh/ruff-action@v3
         with:
-          args: "format --check ."
+          args: "format ."
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖: auto fix and format with ruff"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
