@@ -12,6 +12,9 @@ def generate_summary():
     # CSV 데이터 로드
     df = pd.read_csv(stats_history_path)
     
+    # NaN 값을 0으로 채움 (Mermaid xychart-beta 파싱 에러 방지)
+    df = df.fillna(0)
+    
     # 시간축을 상대 시간(초)으로 변경
     start_time = df['Timestamp'].iloc[0]
     df['RelativeTime'] = df['Timestamp'] - start_time

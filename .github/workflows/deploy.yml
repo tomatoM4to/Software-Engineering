@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.nginx/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
 
 env:
   REGISTRY: ghcr.io
