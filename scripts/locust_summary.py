@@ -16,23 +16,26 @@ def generate_summary():
     start_time = df['Timestamp'].iloc[0]
     df['RelativeTime'] = df['Timestamp'] - start_time
     
-    # 너무 데이터가 많으면 샘플링 (최대 20개 지점)
-    if len(df) > 20:
-        df = df.iloc[::len(df)//20]
+    # 너무 데이터가 많으면 샘플링 (최대 60개 지점)
+    if len(df) > 60:
+        df = df.iloc[::len(df)//60]
 
     # 1. Mermaid 차트 생성 (RPS 및 Response Time)
-    mermaid_line = "```mermaid\nlineChart\n    title \"Load Test: RPS & Response Time (95%)\"\n"
+    mermaid_line = "```mermaid\nxychart-beta\n    title \"Load Test: RPS (Line 1) & P95 Latency (Line 2)\"\n"
     
     # X축 설정 (시간)
     x_axis = "    x-axis [" + ", ".join([f"\"{int(t)}s\"" for t in df['RelativeTime']]) + "]\n"
     mermaid_line += x_axis
     
+    # Y축 설정 (공통)
+    mermaid_line += "    y-axis \"Value\"\n"
+
     # RPS 데이터
-    rps_data = "    line \"Requests/s\" [" + ", ".join([f"{r:.1f}" for r in df['Requests/s']]) + "]\n"
+    rps_data = "    line [" + ", ".join([f"{r:.1f}" for r in df['Requests/s']]) + "]\n"
     mermaid_line += rps_data
     
     # 95% 응답시간 데이터 (ms)
-    p95_data = "    line \"P95 Latency (ms)\" [" + ", ".join([f"{p:.0f}" for p in df['95%']]) + "]\n"
+    p95_data = "    line [" + ", ".join([f"{p:.0f}" for p in df['95%']]) + "]\n"
     mermaid_line += p95_data
     mermaid_line += "```\n"
 
