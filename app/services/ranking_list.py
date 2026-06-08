@@ -5,8 +5,8 @@ from schemas.core import KisTrId
 
 async def get_volume_rank(
     market_div: str = "J",
-    target_div: str = "0",
-    exclude_div: str = "1111111111",
+    target_div: str = "111111111",
+    exclude_div: str = "0000000000",
     bypass_cache: bool = False,
     priority: int = 5,
 ):
@@ -24,7 +24,7 @@ async def get_volume_rank(
     if market_div == "J":
         input_iscd = "0001"  # 코스피
     elif market_div == "Q":
-        input_iscd = "1001"  # 코스닥
+        input_iscd = "0002"  # 코스닥
 
     params = {
         "FID_COND_MRKT_DIV_CODE": real_mrkt_div,
