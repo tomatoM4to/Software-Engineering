@@ -6,7 +6,6 @@ scanner.py + breakout.py 패턴으로 분봉 수집 및 지표 계산.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 import pandas as pd
@@ -92,116 +91,85 @@ class AgentDataOrchestrator:
                 "stock_code 가 올바른지, KIS 인증이 정상인지 확인하세요."
             )
 
-        # 2. 돌파 지표 및 기술적 지표 계산을 쓰레드로 오프로딩하여 이벤트 루프 차단 방지
+        # 2. 돌파 지표 계산 (breakout 패턴 - 다이내믹 파라미터 적용)
         breakout_params = BreakoutRequest(
             anchor_ma=anchor_ma,
             target_mas=target_mas,
             convergence_threshold=convergence_threshold,
         )
+        breakout_result = calculate_breakout(df, breakout_params)
 
-        # 복잡한 Pandas 연산들을 하나의 동기 함수로 묶어 쓰레드에서 실행
-        def _calculate_all_indicators(df_local: pd.DataFrame, br_params):
-            br_result = calculate_breakout(df_local, br_params)
+        # 3. 지표 계산
+        latest = df.iloc[-1]
+        latest_close = int(float(latest["Close"]))
+        latest_volume = int(float(latest["Volume"]))
 
-            latest = df_local.iloc[-1]
-            latest_close = int(float(latest["Close"]))
-            latest_volume = int(float(latest["Volume"]))
-
-            def _flt_local(series: pd.Series, window: int) -> float:
-                return round(
-                    float(series.rolling(window, min_periods=1).mean().iloc[-1]), 2
-                )
-
-            ma5 = _flt_local(df_local["Close"], 5)
-            ma20 = _flt_local(df_local["Close"], 20)
-            ma60 = _flt_local(df_local["Close"], 60)
-            vol_ma20 = _flt_local(df_local["Volume"], 20)
-            volume_ratio = round(latest_volume / vol_ma20, 2) if vol_ma20 > 0 else None
-
-            prev_close_val = df_local["Close"].shift(1).iloc[-1]
-            prev_close = (
-                int(float(prev_close_val))
-                if len(df_local) > 1 and pd.notna(prev_close_val)
-                else None
-            )
-            change_rate = (
-                round((latest_close - prev_close) / prev_close * 100, 2)
-                if prev_close
-                else None
+        def _flt(series: pd.Series, window: int) -> float:
+            return round(
+                float(series.rolling(window, min_periods=1).mean().iloc[-1]), 2
             )
 
-            high_20d_val = (
-                df_local["High"].shift(1).rolling(20, min_periods=5).max().iloc[-1]
-            )
-            high_20d = round(float(high_20d_val), 2) if pd.notna(high_20d_val) else None
-            is_breakout_flag = (
-                (latest_close > high_20d) if high_20d is not None else None
-            )
+        # 고정 지표 (하단 DailyIndicators 유지용)
+        ma5 = _flt(df["Close"], 5)
+        ma20 = _flt(df["Close"], 20)
+        ma60 = _flt(df["Close"], 60)
+        vol_ma20 = _flt(df["Volume"], 20)
+        volume_ratio = round(latest_volume / vol_ma20, 2) if vol_ma20 > 0 else None
 
-            if ma5 > ma20 and ma20 > ma60:
-                trend = "UP"
-            elif ma5 < ma20 and ma20 < ma60:
-                trend = "DOWN"
-            else:
-                trend = "SIDEWAYS"
+        prev_close_val = df["Close"].shift(1).iloc[-1]
+        prev_close = (
+            int(float(prev_close_val))
+            if len(df) > 1 and pd.notna(prev_close_val)
+            else None
+        )
+        change_rate = (
+            round((latest_close - prev_close) / prev_close * 100, 2)
+            if prev_close
+            else None
+        )
 
-            trade_date = df_local.index[-1].strftime("%Y%m%d")
+        high_20d_val = df["High"].shift(1).rolling(20, min_periods=5).max().iloc[-1]
+        high_20d = round(float(high_20d_val), 2) if pd.notna(high_20d_val) else None
+        is_breakout = (latest_close > high_20d) if high_20d is not None else None
 
-            # 분봉 지표용 추가 계산
-            ma_anchor_val = _flt_local(df_local["Close"], anchor_ma)
-            ma_target_val = _flt_local(df_local["Close"], target_mas[0])
-            volume_spike_flag = (
-                bool(latest_volume > vol_ma20 * 1.5) if vol_ma20 > 0 else None
-            )
+        if ma5 > ma20 and ma20 > ma60:
+            trend = "UP"
+        elif ma5 < ma20 and ma20 < ma60:
+            trend = "DOWN"
+        else:
+            trend = "SIDEWAYS"
 
-            return {
-                "breakout_result": br_result,
-                "latest_close": latest_close,
-                "latest_volume": latest_volume,
-                "ma5": ma5,
-                "ma20": ma20,
-                "ma60": ma60,
-                "vol_ma20": vol_ma20,
-                "volume_ratio": volume_ratio,
-                "prev_close": prev_close,
-                "change_rate": change_rate,
-                "high_20d": high_20d,
-                "is_breakout": is_breakout_flag,
-                "trend_direction": trend,
-                "trade_date": trade_date,
-                "ma_anchor_val": ma_anchor_val,
-                "ma_target_val": ma_target_val,
-                "volume_spike": volume_spike_flag,
-                "latest_open": int(float(latest["Open"])),
-                "latest_high": int(float(latest["High"])),
-                "latest_low": int(float(latest["Low"])),
-            }
-
-        calc = await asyncio.to_thread(_calculate_all_indicators, df, breakout_params)
+        trade_date = df.index[-1].strftime("%Y%m%d")
 
         daily = DailyIndicators(
             stock_code=stock_code,
             stock_name=stock_name,
             market=None,
-            trade_date=calc["trade_date"],
-            open_price=calc["latest_open"],
-            high_price=calc["latest_high"],
-            low_price=calc["latest_low"],
-            close_price=calc["latest_close"],
-            volume=calc["latest_volume"],
-            prev_close=calc["prev_close"],
-            change_rate=calc["change_rate"],
-            ma5=calc["ma5"],
-            ma20=calc["ma20"],
-            ma60=calc["ma60"],
-            volume_ma20=calc["vol_ma20"],
-            volume_ratio=calc["volume_ratio"],
-            high_20d=calc["high_20d"],
-            is_breakout=calc["is_breakout"],
-            trend_direction=calc["trend_direction"],
+            trade_date=trade_date,
+            open_price=int(float(latest["Open"])),
+            high_price=int(float(latest["High"])),
+            low_price=int(float(latest["Low"])),
+            close_price=latest_close,
+            volume=latest_volume,
+            prev_close=prev_close,
+            change_rate=change_rate,
+            ma5=ma5,
+            ma20=ma20,
+            ma60=ma60,
+            volume_ma20=vol_ma20,
+            volume_ratio=volume_ratio,
+            high_20d=high_20d,
+            is_breakout=is_breakout,
+            trend_direction=trend,
         )
 
-        is_minute_breakout = calc["breakout_result"]["breakout_category"] in (
+        # 분봉 지표 (anchor_ma 반영)
+        ma_anchor_val = _flt(df["Close"], anchor_ma)
+        # 타겟 중 가장 짧은 것 하나 추출 (ma15 대용)
+        ma_target_val = _flt(df["Close"], target_mas[0])
+
+        volume_spike = bool(latest_volume > vol_ma20 * 1.5) if vol_ma20 > 0 else None
+        is_minute_breakout = breakout_result["breakout_category"] in (
             "BREAKOUT_STRONG",
             "BREAKOUT_NORMAL",
         )
@@ -209,13 +177,13 @@ class AgentDataOrchestrator:
         minute = MinuteIndicators(
             timeframe="1m",
             data_source="realtime",
-            latest_price=calc["latest_close"],
-            latest_volume=calc["latest_volume"],
-            ma15=calc["ma_target_val"],
-            ma30=calc["ma_anchor_val"],
+            latest_price=latest_close,
+            latest_volume=latest_volume,
+            ma15=ma_target_val,  # 다이내믹 타겟 반영
+            ma30=ma_anchor_val,  # 다이내믹 앵커 반영
             is_minute_breakout=is_minute_breakout,
-            minute_breakout_level=calc["high_20d"],
-            volume_spike=calc["volume_spike"],
+            minute_breakout_level=high_20d,
+            volume_spike=volume_spike,
         )
 
         # 4. 뉴스 수집
@@ -231,7 +199,7 @@ class AgentDataOrchestrator:
         logger.info(
             "[Orchestrator] %s | 거래일:%s | 앵커:%d | 타겟:%s",
             stock_code,
-            calc["trade_date"],
+            trade_date,
             anchor_ma,
             target_mas,
         )
