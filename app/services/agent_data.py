@@ -102,7 +102,7 @@ class AgentDataOrchestrator:
         # 복잡한 Pandas 연산들을 하나의 동기 함수로 묶어 쓰레드에서 실행
         def _calculate_all_indicators(df_local: pd.DataFrame, br_params):
             br_result = calculate_breakout(df_local, br_params)
-            
+
             latest = df_local.iloc[-1]
             latest_close = int(float(latest["Close"]))
             latest_volume = int(float(latest["Volume"]))
@@ -130,9 +130,13 @@ class AgentDataOrchestrator:
                 else None
             )
 
-            high_20d_val = df_local["High"].shift(1).rolling(20, min_periods=5).max().iloc[-1]
+            high_20d_val = (
+                df_local["High"].shift(1).rolling(20, min_periods=5).max().iloc[-1]
+            )
             high_20d = round(float(high_20d_val), 2) if pd.notna(high_20d_val) else None
-            is_breakout_flag = (latest_close > high_20d) if high_20d is not None else None
+            is_breakout_flag = (
+                (latest_close > high_20d) if high_20d is not None else None
+            )
 
             if ma5 > ma20 and ma20 > ma60:
                 trend = "UP"
@@ -142,12 +146,14 @@ class AgentDataOrchestrator:
                 trend = "SIDEWAYS"
 
             trade_date = df_local.index[-1].strftime("%Y%m%d")
-            
+
             # 분봉 지표용 추가 계산
             ma_anchor_val = _flt_local(df_local["Close"], anchor_ma)
             ma_target_val = _flt_local(df_local["Close"], target_mas[0])
-            volume_spike_flag = bool(latest_volume > vol_ma20 * 1.5) if vol_ma20 > 0 else None
-            
+            volume_spike_flag = (
+                bool(latest_volume > vol_ma20 * 1.5) if vol_ma20 > 0 else None
+            )
+
             return {
                 "breakout_result": br_result,
                 "latest_close": latest_close,
@@ -241,7 +247,6 @@ class AgentDataOrchestrator:
             target_mas=target_mas,
             ai_persona=ai_persona,
         )
-
 
 
 agent_data_orchestrator = AgentDataOrchestrator()
