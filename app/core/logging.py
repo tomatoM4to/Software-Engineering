@@ -41,30 +41,20 @@ class LogCategoryHighlighter(RegexHighlighter):
 
 
 def setup_logging() -> None:
-    """Configure root logger with Rich handler for better readability."""
-    level_name = os.getenv("LOG_LEVEL", "INFO").upper()
-    level = getattr(logging, level_name, logging.INFO)
+    """Configure root logger with a simpler Rich handler for performance."""
+    # 기본 로그 레벨을 WARNING으로 상향하여 일반적인 INFO 로그가 디스크 I/O를 유발하지 않게 함
+    level_name = os.getenv("LOG_LEVEL", "WARNING").upper()
+    level = getattr(logging, level_name, logging.WARNING)
 
-    console = Console(
-        stderr=True,
-        theme=Theme(
-            {
-                "logging.category.auth_tag": "bold bright_cyan",
-                "logging.category.sched_tag": "bold bright_green",
-                "logging.category.app_tag": "dim white",
-            }
-        ),
-    )
+    console = Console(stderr=True)
     handler = RichHandler(
         console=console,
-        rich_tracebacks=True,
-        highlighter=LogCategoryHighlighter(),
-        show_time=True,
+        rich_tracebacks=False, # 트레이스백 생성 비용 제거
+        show_time=False,       # 시간 출력 제외
         show_level=True,
-        show_path=True,
+        show_path=False,       # 파일 경로 출력 제외 (연산 비용 감소)
     )
-    handler.addFilter(LogCategoryFilter())
-    handler.setFormatter(logging.Formatter("%(category_tag)s %(message)s"))
+    handler.setFormatter(logging.Formatter("%(message)s"))
 
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
