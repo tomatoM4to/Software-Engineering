@@ -4,7 +4,6 @@ import os
 from rich.console import Console
 from rich.highlighter import RegexHighlighter
 from rich.logging import RichHandler
-from rich.theme import Theme
 
 
 class LogCategoryFilter(logging.Filter):
@@ -49,10 +48,10 @@ def setup_logging() -> None:
     console = Console(stderr=True)
     handler = RichHandler(
         console=console,
-        rich_tracebacks=False, # 트레이스백 생성 비용 제거
-        show_time=False,       # 시간 출력 제외
+        rich_tracebacks=False,  # 트레이스백 생성 비용 제거
+        show_time=False,  # 시간 출력 제외
         show_level=True,
-        show_path=False,       # 파일 경로 출력 제외 (연산 비용 감소)
+        show_path=False,  # 파일 경로 출력 제외 (연산 비용 감소)
     )
     handler.setFormatter(logging.Formatter("%(message)s"))
 
