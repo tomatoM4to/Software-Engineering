@@ -84,7 +84,7 @@ async def fetch_ohlcv_df(
         iscd, market_div=market_div, bypass_cache=bypass_cache, priority=priority
     )
     if not batch1:
-        return prepare_ohlcv_df([])
+        return await asyncio.to_thread(prepare_ohlcv_df, [])
 
     # 캐시에서 가져온 경우 이미 240분 분량이 합쳐져 있음 (len > 120)
     if len(batch1) > 120:
@@ -117,7 +117,7 @@ async def fetch_ohlcv_df(
         }
         for c in combined
     ]
-    return prepare_ohlcv_df(ohlcv)
+    return await asyncio.to_thread(prepare_ohlcv_df, ohlcv)
 
 
 async def fetch_and_analyze_stock(
@@ -140,7 +140,7 @@ async def fetch_and_analyze_stock(
                 "convergence_score": None,
             }
 
-        result = calculate_breakout(df, request_params)
+        result = await asyncio.to_thread(calculate_breakout, df, request_params)
         result.update({"code": iscd, "name": name})
         return result
     except Exception as e:
