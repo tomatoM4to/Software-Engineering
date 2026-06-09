@@ -126,10 +126,17 @@ def sync_bulk_analyze(stocks_raw_data: list[dict], request_params):
 
         try:
             if not raw_list:
-                final_results.append({
-                    "code": iscd, "name": name, "breakout_category": "NONE",
-                    "signal_date": "-", "close": 0.0, "volume": 0, "convergence_score": None
-                })
+                final_results.append(
+                    {
+                        "code": iscd,
+                        "name": name,
+                        "breakout_category": "NONE",
+                        "signal_date": "-",
+                        "close": 0.0,
+                        "volume": 0,
+                        "convergence_score": None,
+                    }
+                )
                 continue
 
             # Pandas 연산 수행
@@ -139,10 +146,17 @@ def sync_bulk_analyze(stocks_raw_data: list[dict], request_params):
             final_results.append(result)
         except Exception as e:
             logger.error(f"Error analyzing {iscd}: {e}")
-            final_results.append({
-                "code": iscd, "name": name, "breakout_category": "NONE",
-                "signal_date": "Error", "close": 0.0, "volume": 0, "convergence_score": None
-            })
+            final_results.append(
+                {
+                    "code": iscd,
+                    "name": name,
+                    "breakout_category": "NONE",
+                    "signal_date": "Error",
+                    "close": 0.0,
+                    "volume": 0,
+                    "convergence_score": None,
+                }
+            )
     return final_results
 
 
@@ -158,15 +172,16 @@ async def get_breakout_rankings(market: str, breakout_request):
     stocks = rank_res.get_body().output[:30]
 
     # 1. 30개 종목 데이터 비동기 병렬 수집 (I/O 병목 제거)
-    tasks = [
-        fetch_ohlcv_raw_list(s["mksc_shrn_iscd"], "J")
-        for s in stocks
-    ]
+    tasks = [fetch_ohlcv_raw_list(s["mksc_shrn_iscd"], "J") for s in stocks]
     raw_data_lists = await asyncio.gather(*tasks)
 
     # 2. 연산용 데이터 구조화
     bulk_input = [
-        {"code": s["mksc_shrn_iscd"], "name": s["hts_kor_isnm"], "raw_list": raw_data_lists[i]}
+        {
+            "code": s["mksc_shrn_iscd"],
+            "name": s["hts_kor_isnm"],
+            "raw_list": raw_data_lists[i],
+        }
         for i, s in enumerate(stocks)
     ]
 
@@ -181,6 +196,8 @@ async def get_breakout_rankings(market: str, breakout_request):
 
 
 # 하위 호환성을 위해 유지 (fetch_ohlcv_df를 사용하는 다른 모듈이 있을 수 있음)
-async def fetch_ohlcv_df(iscd: str, market_div: str = "J", bypass_cache: bool = False, priority: int = 5):
+async def fetch_ohlcv_df(
+    iscd: str, market_div: str = "J", bypass_cache: bool = False, priority: int = 5
+):
     raw_list = await fetch_ohlcv_raw_list(iscd, market_div, bypass_cache, priority)
     return prepare_ohlcv_df(raw_list)
